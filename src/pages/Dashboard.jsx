@@ -1,3 +1,5 @@
+import './Dashboard.css';
+
 function Dashboard() {
     const currentPills = [
         { id: 1, name: 'Aspirin', time: '08:00 AM' },
@@ -11,51 +13,6 @@ function Dashboard() {
 
     return (
         <div className="dashboard-page">
-            <style>{`
-                .dashboard-page {
-                    min-height: 100vh;
-                    background-color: #f4f6f8;
-                    font-family: Arial, sans-serif;
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .dashboard-header {
-                    background-color: #2c3e50;
-                    color: white;
-                    padding: 16px;
-                    text-align: center;
-                }
-
-                .dashboard-content {
-                    flex: 1;
-                    display: flex;
-                    gap: 20px;
-                    padding: 20px;
-                }
-
-                .card {
-                    background: white;
-                    border-radius: 8px;
-                    padding: 20px;
-                    flex: 1;
-                    border: 1px solid #ddd;
-                }
-
-                ul {
-                    list-style: none;
-                    padding: 0;
-                    margin: 0;
-                }
-
-                li {
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 10px 0;
-                    border-bottom: 1px solid #eee;
-                }
-            `}</style>
-
             <header className="dashboard-header">
                 <h1>Dashboard</h1>
             </header>
