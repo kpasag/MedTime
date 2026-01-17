@@ -1,14 +1,20 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/LoginPage'
+
 
 function App() {
   return (
-    <div>
+    <BrowserRouter>
       <Header />
-      <LandingPage />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
       <Footer />
-    </div>
+    </BrowserRouter>
   )
 }
 
