@@ -10,9 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "firebase": "^12.8.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "firebase": "^12.8.0",
+    "firebase-admin": "^13.6.0",
     "mongoose": "^8.21.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
