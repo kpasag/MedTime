@@ -13,3 +13,22 @@ admin.initializeApp({
 });
 
 const app = express();
+const { verifyToken } = require('./middleware/authMiddleware');
+
+app.use(express.json());
+
+// Test route - protected
+app.get('/api/test', verifyToken, (req, res) => {
+  res.json({
+    message: 'Token verified successfully!',
+    user: {
+      uid: req.user.uid,
+      email: req.user.email
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
