@@ -3,740 +3,723 @@ import { auth } from "../../firebase.config";
 import "./Dashboard.css";
 
 function Dashboard() {
-  const [currentPills, setCurrentPills] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      medicine: "Aspirin",
-      time: "08:00 AM",
-      status: "missed",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      medicine: "Vitamin D",
-      time: "01:00 PM",
-      status: "taken",
-    },
-  ]);
+    const [currentPills, setCurrentPills] = useState([
+    ]);
 
-  const notifications = [
-    { id: 1, message: "Aspirin taken", date: "Jan 15, 08:05" },
-    { id: 2, message: "Vitamin D missed", date: "Jan 14, 13:30" },
-    { id: 3, message: "New Vitamin C scheduled", date: "Jan 13, 09:00" },
-  ];
+    const notifications = [
+    ];
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Link caregiver/patient modal state
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-  const [linkType, setLinkType] = useState(''); // 'caregiver' or 'patient'
-  const [linkEmail, setLinkEmail] = useState('');
-  const [linkError, setLinkError] = useState('');
-  const [linkSuccess, setLinkSuccess] = useState('');
-  const [isLinking, setIsLinking] = useState(false);
+    // Link caregiver/patient modal state
+    const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+    const [linkType, setLinkType] = useState(''); // 'caregiver' or 'patient'
+    const [linkEmail, setLinkEmail] = useState('');
+    const [linkError, setLinkError] = useState('');
+    const [linkSuccess, setLinkSuccess] = useState('');
+    const [isLinking, setIsLinking] = useState(false);
 
-  const [pillForm, setPillForm] = useState({
-    pillName: "",
-    dosage: "",
-    takeTimes: [""], // multiple times per day
-    intervalDays: 1, // repeat every N days
-  });
+    const [pillForm, setPillForm] = useState({
+        pillName: "",
+        dosage: "",
+        takeTimes: [""], // multiple times per day
+        intervalDays: 1, // repeat every N days
+    });
 
-  const DPD_BASE = "https://health-products.canada.ca/api/drug/drugproduct/";
+    const DPD_BASE = "https://health-products.canada.ca/api/drug/drugproduct/";
 
-  // Brand search state
-  const [brandQuery, setBrandQuery] = useState("");
-  const [brandGroups, setBrandGroups] = useState([]); // [{ label: "TYLENOL", count: 42 }]
-  const [isBrandDropdownOpen, setIsBrandDropdownOpen] = useState(false);
+    // Brand search state
+    const [brandQuery, setBrandQuery] = useState("");
+    const [brandGroups, setBrandGroups] = useState([]); // [{ label: "TYLENOL", count: 42 }]
+    const [isBrandDropdownOpen, setIsBrandDropdownOpen] = useState(false);
 
-  const [selectedBrand, setSelectedBrand] = useState(""); // e.g., "TYLENOL"
-  const [productOptions, setProductOptions] = useState([]); // [{ id, label, din }]
-  const [selectedProductId, setSelectedProductId] = useState("");
+    const [selectedBrand, setSelectedBrand] = useState(""); // e.g., "TYLENOL"
+    const [productOptions, setProductOptions] = useState([]); // [{ id, label, din }]
+    const [selectedProductId, setSelectedProductId] = useState("");
 
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [suggestionsError, setSuggestionsError] = useState("");
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [suggestionsError, setSuggestionsError] = useState("");
 
-  const abortRef = useRef(null);
-  const cacheRef = useRef(new Map()); // key: query -> raw normalized list
+    const abortRef = useRef(null);
+    const cacheRef = useRef(new Map()); // key: query -> raw normalized list
 
-  const totalPills = currentPills.length;
+    const totalPills = currentPills.length;
 
-  const closeAddModal = () => {
-    setIsAddModalOpen(false);
-    setPillForm({ pillName: "", dosage: "", takeTimes: [""], intervalDays: 1 });
+    const closeAddModal = () => {
+        setIsAddModalOpen(false);
+        setPillForm({ pillName: "", dosage: "", takeTimes: [""], intervalDays: 1 });
 
-    setBrandQuery("");
-    setBrandGroups([]);
-    setIsBrandDropdownOpen(false);
+        setBrandQuery("");
+        setBrandGroups([]);
+        setIsBrandDropdownOpen(false);
 
-    setSelectedBrand("");
-    setProductOptions([]);
-    setSelectedProductId("");
-    setSuggestionsError("");
-    setIsLoadingSuggestions(false);
+        setSelectedBrand("");
+        setProductOptions([]);
+        setSelectedProductId("");
+        setSuggestionsError("");
+        setIsLoadingSuggestions(false);
 
-    if (abortRef.current) {
-      abortRef.current.abort();
-      abortRef.current = null;
-    }
-  };
-
-  // Link modal functions
-  const openLinkModal = (type) => {
-    setLinkType(type);
-    setLinkEmail('');
-    setLinkError('');
-    setLinkSuccess('');
-    setIsLinkModalOpen(true);
-  };
-
-  const closeLinkModal = () => {
-    setIsLinkModalOpen(false);
-    setLinkType('');
-    setLinkEmail('');
-    setLinkError('');
-    setLinkSuccess('');
-  };
-
-  const handleLinkUser = async (e) => {
-    e.preventDefault();
-    if (!linkEmail.trim()) {
-      setLinkError('Please enter an email');
-      return;
-    }
-
-    setIsLinking(true);
-    setLinkError('');
-    setLinkSuccess('');
-
-    try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) {
-        setLinkError('Not authenticated');
-        return;
-      }
-
-      const endpoint = linkType === 'caregiver' ? 'link-caregiver' : 'link-patient';
-      const res = await fetch(`http://localhost:3000/api/users/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ email: linkEmail.toLowerCase() })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLinkError(data.error || 'Failed to link user');
-        return;
-      }
-
-      setLinkSuccess(`${linkType === 'caregiver' ? 'Caregiver' : 'Patient'} linked successfully!`);
-      setLinkEmail('');
-    } catch (err) {
-      setLinkError(err.message || 'Failed to link user');
-    } finally {
-      setIsLinking(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isAddModalOpen) return;
-
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") closeAddModal();
+        if (abortRef.current) {
+            abortRef.current.abort();
+            abortRef.current = null;
+        }
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isAddModalOpen]);
+    // Link modal functions
+    const openLinkModal = (type) => {
+        setLinkType(type);
+        setLinkEmail('');
+        setLinkError('');
+        setLinkSuccess('');
+        setIsLinkModalOpen(true);
+    };
 
-  // Fetch brand search results (fast + cached + debounced)
-  useEffect(() => {
-    if (!isAddModalOpen) return;
+    const closeLinkModal = () => {
+        setIsLinkModalOpen(false);
+        setLinkType('');
+        setLinkEmail('');
+        setLinkError('');
+        setLinkSuccess('');
+    };
 
-    const q = brandQuery.trim();
-    setSuggestionsError("");
-
-    // Show dropdown while typing, require 3+ characters before fetching
-    if (q.length === 0) {
-      setBrandGroups([]);
-      setIsBrandDropdownOpen(false);
-      setSelectedBrand("");
-      setProductOptions([]);
-      setSelectedProductId("");
-      return;
-    }
-
-    if (q.length < 3) {
-      setBrandGroups([{ label: "Type at least 3 characters...", count: 0 }]);
-      setIsBrandDropdownOpen(true);
-      setSelectedBrand("");
-      setProductOptions([]);
-      setSelectedProductId("");
-      return;
-    }
-
-    const timeoutId = setTimeout(async () => {
-      try {
-        setIsLoadingSuggestions(true);
-
-        const cacheKey = q.toLowerCase();
-        if (cacheRef.current.has(cacheKey)) {
-          const cached = cacheRef.current.get(cacheKey);
-          const groups = buildBrandGroups(cached, q);
-          setBrandGroups(groups);
-          setIsBrandDropdownOpen(true);
-          return;
+    const handleLinkUser = async (e) => {
+        e.preventDefault();
+        if (!linkEmail.trim()) {
+            setLinkError('Please enter an email');
+            return;
         }
 
-        if (abortRef.current) abortRef.current.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
+        setIsLinking(true);
+        setLinkError('');
+        setLinkSuccess('');
 
-        const url = new URL(DPD_BASE);
-        url.searchParams.set("brandname", q);
-        url.searchParams.set("status", "2"); // marketed
-        url.searchParams.set("lang", "en");
-        url.searchParams.set("type", "json");
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) {
+                setLinkError('Not authenticated');
+                return;
+            }
 
-        const res = await fetch(url.toString(), {
-          method: "GET",
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
+            const endpoint = linkType === 'caregiver' ? 'link-caregiver' : 'link-patient';
+            const res = await fetch(`http://localhost:3000/api/users/${endpoint}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ email: linkEmail.toLowerCase() })
+            });
 
-        if (!res.ok) throw new Error(`DPD search failed (${res.status})`);
+            const data = await res.json();
 
-        const data = await res.json();
+            if (!res.ok) {
+                setLinkError(data.error || 'Failed to link user');
+                return;
+            }
 
-        const normalized = Array.isArray(data)
-          ? data
-              .map((x) => ({
-                id: x.drug_code,
-                label: x.brand_name,
-                din: x.drug_identification_number,
-              }))
-              .filter((x) => x.label)
-          : [];
-
-        cacheRef.current.set(cacheKey, normalized);
-
-        const groups = buildBrandGroups(normalized, q);
-        setBrandGroups(groups);
-        setIsBrandDropdownOpen(true);
-      } catch (err) {
-        if (err?.name === "AbortError") return;
-        setBrandGroups([]);
-        setIsBrandDropdownOpen(true);
-        setSuggestionsError(err?.message || "Failed to load suggestions");
-      } finally {
-        setIsLoadingSuggestions(false);
-      }
-    }, 250);
-
-    return () => clearTimeout(timeoutId);
-  }, [brandQuery, isAddModalOpen]);
-
-  const buildBrandGroups = (normalized, q) => {
-    // Prioritize items that contain the query (DPD already does contains),
-    // then build "brand groups" using first word.
-    const qLower = q.toLowerCase();
-
-    const relevant = normalized
-      .filter((x) => x.label && x.label.toLowerCase().includes(qLower))
-      .slice(0, 500); // guardrail: avoid grouping an enormous list
-
-    const counts = new Map();
-    for (const item of relevant) {
-      const firstWord = item.label.split(" ")[0]?.trim();
-      if (!firstWord) continue;
-      const key = firstWord.toUpperCase();
-      counts.set(key, (counts.get(key) || 0) + 1);
-    }
-
-    // Sort by count desc, but also make sure groups that start with query float to top
-    const qUpper = q.toUpperCase();
-    const groups = Array.from(counts.entries()).map(([label, count]) => ({
-      label,
-      count,
-    }));
-
-    groups.sort((a, b) => {
-      const aStarts = a.label.startsWith(qUpper) ? 1 : 0;
-      const bStarts = b.label.startsWith(qUpper) ? 1 : 0;
-      if (aStarts !== bStarts) return bStarts - aStarts;
-      return b.count - a.count;
-    });
-
-    return groups.slice(0, 10);
-  };
-
-  const chooseBrandGroup = (groupLabel) => {
-    if (groupLabel === "Keep typing...") return;
-
-    setSelectedBrand(groupLabel);
-    setIsBrandDropdownOpen(false);
-
-    // Build product list under this brand group using cached results for the current query
-    const q = brandQuery.trim().toLowerCase();
-    const normalized = cacheRef.current.get(q) || [];
-
-    const products = normalized
-      .filter((x) => x.label && x.label.toUpperCase().startsWith(groupLabel))
-      .map((x) => ({
-        id: x.id,
-        label: x.label,
-        din: x.din,
-      }));
-
-    // Dedup by label, then limit (this is where your old code could hide Tylenol)
-    const seen = new Set();
-    const deduped = [];
-    for (const p of products) {
-      const key = p.label.toUpperCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      deduped.push(p);
-      if (deduped.length >= 25) break;
-    }
-
-    setProductOptions(deduped);
-    setSelectedProductId("");
-    setPillForm((prev) => ({ ...prev, pillName: "" }));
-  };
-
-  const chooseProduct = (productId) => {
-    setSelectedProductId(productId);
-
-    const chosen = productOptions.find(
-      (p) => String(p.id) === String(productId),
-    );
-    if (!chosen) return;
-
-    setPillForm((prev) => ({ ...prev, pillName: chosen.label }));
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setPillForm((prev) => ({
-      ...prev,
-      [name]: name === "intervalDays" ? Number(value) : value,
-    }));
-  };
-
-  const updateTimeAtIndex = (index, value) => {
-    setPillForm((prev) => {
-      const next = [...prev.takeTimes];
-      next[index] = value;
-      return { ...prev, takeTimes: next };
-    });
-  };
-
-  const addTimeField = () => {
-    setPillForm((prev) => ({ ...prev, takeTimes: [...prev.takeTimes, ""] }));
-  };
-
-  const removeTimeField = (index) => {
-    setPillForm((prev) => {
-      const next = prev.takeTimes.filter((_, i) => i !== index);
-      return { ...prev, takeTimes: next.length ? next : [""] };
-    });
-  };
-
-  const formatTime = (value) => {
-    if (!value) return "";
-    const d = new Date(`1970-01-01T${value}:00`);
-    if (Number.isNaN(d.getTime())) return value;
-    return d.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
-
-  const frequencyText = (days) => {
-    if (days === 1) return "daily";
-    return `every ${days} days`;
-  };
-
-  const updateDatabasePills = async (pillReminder) => {
-    const token = await auth.currentUser?.getIdToken();
-    if (!token) {
-      console.error('No auth token available');
-      return;
-    }
-
-    await fetch('http://localhost:3000/api/users', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(pillReminder)
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const pillName = pillForm.pillName.trim();
-    const dosage = pillForm.dosage.trim();
-    const intervalDays = pillForm.intervalDays;
-
-    const cleanedTimes = pillForm.takeTimes
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    if (
-      !pillName ||
-      !dosage ||
-      !intervalDays ||
-      intervalDays < 1 ||
-      cleanedTimes.length === 0
-    )
-      return;
-
-    const timesLabel = cleanedTimes.map(formatTime).join(", ");
-    const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
-
-    const newPill = {
-      id: Date.now(),
-      name: "New Person",
-      medicine: `${pillName} (${dosage})`,
-      time: timeLabel,
-      status: "pending",
+            setLinkSuccess(`${linkType === 'caregiver' ? 'Caregiver' : 'Patient'} linked successfully!`);
+            setLinkEmail('');
+        } catch (err) {
+            setLinkError(err.message || 'Failed to link user');
+        } finally {
+            setIsLinking(false);
+        }
     };
 
-    setCurrentPills((prev) => [...prev, newPill]);
-    closeAddModal();
-  };
+    useEffect(() => {
+        if (!isAddModalOpen) return;
 
-  return (
-    <div className="dashboard-page">
-      <header className="dashboard-header">
-        <h1>Dashboard</h1>
-        <div className="header-actions">
-          <button
-            className="add-link-btn"
-            onClick={() => openLinkModal('caregiver')}
-          >
-            + Add Caregiver
-          </button>
-          <button
-            className="add-link-btn"
-            onClick={() => openLinkModal('patient')}
-          >
-            + Add Patient
-          </button>
-        </div>
-      </header>
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") closeAddModal();
+        };
 
-      <main className="dashboard-content">
-        <section className="current-pills-section">
-          <h2>
-            Current Pills{" "}
-            <span style={{ fontWeight: 500, fontSize: "0.95rem" }}>
-              ({totalPills} total)
-            </span>
-          </h2>
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [isAddModalOpen]);
 
-          <div className="pill-cards-container">
-            {currentPills.map(({ id, name, medicine, time, status }) => (
-              <div key={id} className="pill-card">
-                <div className="pill-header">
-                  <span className="medicine-name">{medicine}</span>
-                  <span className={`status-icon ${status}`}>
-                    {status === "taken" && "✓"}
-                    {status === "missed" && "x"}
-                    {status === "pending" && "..."}
-                  </span>
-                </div>
+    // Fetch brand search results (fast + cached + debounced)
+    useEffect(() => {
+        if (!isAddModalOpen) return;
 
-                <div className="pill-details">
-                  <div className="person-name">{name}</div>
-                  <div className="pill-time">{time}</div>
-                </div>
-              </div>
-            ))}
+        const q = brandQuery.trim();
+        setSuggestionsError("");
 
-            <button
-              type="button"
-              className="pill-card add-card"
-              onClick={() => setIsAddModalOpen(true)}
-            >
-              <span className="plus-sign">+</span>
-              <div>Add Pill</div>
-            </button>
-          </div>
-        </section>
+        // Show dropdown while typing, require 3+ characters before fetching
+        if (q.length === 0) {
+            setBrandGroups([]);
+            setIsBrandDropdownOpen(false);
+            setSelectedBrand("");
+            setProductOptions([]);
+            setSelectedProductId("");
+            return;
+        }
 
-        <section className="notifications-section">
-          <h2>Notifications</h2>
-          {notifications.map(({ id, message, date }) => (
-            <div key={id} className="notification-item">
-              <div>{message}</div>
-              <small>{date}</small>
-            </div>
-          ))}
-        </section>
-      </main>
+        if (q.length < 3) {
+            setBrandGroups([{ label: "Type at least 3 characters...", count: 0 }]);
+            setIsBrandDropdownOpen(true);
+            setSelectedBrand("");
+            setProductOptions([]);
+            setSelectedProductId("");
+            return;
+        }
 
-      {isAddModalOpen && (
-        <div
-          className="modal-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeAddModal();
-          }}
-        >
-          <div className="modal" role="dialog" aria-modal="true">
-            <div className="modal-header">
-              <h3 className="modal-title">Add Pill</h3>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={closeAddModal}
-                aria-label="Close"
-              >
-                x
-              </button>
-            </div>
+        const timeoutId = setTimeout(async () => {
+            try {
+                setIsLoadingSuggestions(true);
 
-            <form className="modal-body" onSubmit={handleSubmit}>
-              <label className="modal-label" style={{ position: "relative" }}>
-                Brand
-                <input
-                  className="modal-input"
-                  value={brandQuery}
-                  onChange={(e) => {
-                    setBrandQuery(e.target.value);
-                    setSelectedBrand("");
-                    setProductOptions([]);
-                    setSelectedProductId("");
-                    setPillForm((prev) => ({ ...prev, pillName: "" }));
+                const cacheKey = q.toLowerCase();
+                if (cacheRef.current.has(cacheKey)) {
+                    const cached = cacheRef.current.get(cacheKey);
+                    const groups = buildBrandGroups(cached, q);
+                    setBrandGroups(groups);
                     setIsBrandDropdownOpen(true);
-                  }}
-                  onFocus={() => {
-                    if (brandQuery.trim().length > 0)
-                      setIsBrandDropdownOpen(true);
-                  }}
-                  onBlur={() => {
-                    setTimeout(() => setIsBrandDropdownOpen(false), 150);
-                  }}
-                  placeholder="Type a brand (e.g., tylenol)"
-                  autoComplete="off"
-                  autoFocus
-                  required
-                />
-                {isBrandDropdownOpen && (
-                  <div className="autocomplete-dropdown">
-                    {isLoadingSuggestions && (
-                      <div className="autocomplete-item">Loading...</div>
-                    )}
+                    return;
+                }
 
-                    {!isLoadingSuggestions && suggestionsError && (
-                      <div className="autocomplete-item">
-                        {suggestionsError}
-                      </div>
-                    )}
+                if (abortRef.current) abortRef.current.abort();
+                const controller = new AbortController();
+                abortRef.current = controller;
 
-                    {!isLoadingSuggestions &&
-                      !suggestionsError &&
-                      brandGroups.length === 0 && (
-                        <div className="autocomplete-item">No matches</div>
-                      )}
+                const url = new URL(DPD_BASE);
+                url.searchParams.set("brandname", q);
+                url.searchParams.set("status", "2"); // marketed
+                url.searchParams.set("lang", "en");
+                url.searchParams.set("type", "json");
 
-                    {!isLoadingSuggestions &&
-                      !suggestionsError &&
-                      brandGroups.map((g) => (
+                const res = await fetch(url.toString(), {
+                    method: "GET",
+                    signal: controller.signal,
+                    headers: { Accept: "application/json" },
+                });
+
+                if (!res.ok) throw new Error(`DPD search failed (${res.status})`);
+
+                const data = await res.json();
+
+                const normalized = Array.isArray(data)
+                    ? data
+                        .map((x) => ({
+                            id: x.drug_code,
+                            label: x.brand_name,
+                            din: x.drug_identification_number,
+                        }))
+                        .filter((x) => x.label)
+                    : [];
+
+                cacheRef.current.set(cacheKey, normalized);
+
+                const groups = buildBrandGroups(normalized, q);
+                setBrandGroups(groups);
+                setIsBrandDropdownOpen(true);
+            } catch (err) {
+                if (err?.name === "AbortError") return;
+                setBrandGroups([]);
+                setIsBrandDropdownOpen(true);
+                setSuggestionsError(err?.message || "Failed to load suggestions");
+            } finally {
+                setIsLoadingSuggestions(false);
+            }
+        }, 250);
+
+        return () => clearTimeout(timeoutId);
+    }, [brandQuery, isAddModalOpen]);
+
+    const buildBrandGroups = (normalized, q) => {
+        // Prioritize items that contain the query (DPD already does contains),
+        // then build "brand groups" using first word.
+        const qLower = q.toLowerCase();
+
+        const relevant = normalized
+            .filter((x) => x.label && x.label.toLowerCase().includes(qLower))
+            .slice(0, 500); // guardrail: avoid grouping an enormous list
+
+        const counts = new Map();
+        for (const item of relevant) {
+            const firstWord = item.label.split(" ")[0]?.trim();
+            if (!firstWord) continue;
+            const key = firstWord.toUpperCase();
+            counts.set(key, (counts.get(key) || 0) + 1);
+        }
+
+        // Sort by count desc, but also make sure groups that start with query float to top
+        const qUpper = q.toUpperCase();
+        const groups = Array.from(counts.entries()).map(([label, count]) => ({
+            label,
+            count,
+        }));
+
+        groups.sort((a, b) => {
+            const aStarts = a.label.startsWith(qUpper) ? 1 : 0;
+            const bStarts = b.label.startsWith(qUpper) ? 1 : 0;
+            if (aStarts !== bStarts) return bStarts - aStarts;
+            return b.count - a.count;
+        });
+
+        return groups.slice(0, 10);
+    };
+
+    const chooseBrandGroup = (groupLabel) => {
+        if (groupLabel === "Keep typing...") return;
+
+        setSelectedBrand(groupLabel);
+        setIsBrandDropdownOpen(false);
+
+        // Build product list under this brand group using cached results for the current query
+        const q = brandQuery.trim().toLowerCase();
+        const normalized = cacheRef.current.get(q) || [];
+
+        const products = normalized
+            .filter((x) => x.label && x.label.toUpperCase().startsWith(groupLabel))
+            .map((x) => ({
+                id: x.id,
+                label: x.label,
+                din: x.din,
+            }));
+
+
+        const seen = new Set();
+        const deduped = [];
+        for (const p of products) {
+            const key = p.label.toUpperCase();
+            if (seen.has(key)) continue;
+            seen.add(key);
+            deduped.push(p);
+            if (deduped.length >= 25) break;
+        }
+
+        setProductOptions(deduped);
+        setSelectedProductId("");
+        setPillForm((prev) => ({ ...prev, pillName: "" }));
+    };
+
+    const chooseProduct = (productId) => {
+        setSelectedProductId(productId);
+
+        const chosen = productOptions.find(
+            (p) => String(p.id) === String(productId),
+        );
+        if (!chosen) return;
+
+        setPillForm((prev) => ({ ...prev, pillName: chosen.label }));
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setPillForm((prev) => ({
+            ...prev,
+            [name]: name === "intervalDays" ? Number(value) : value,
+        }));
+    };
+
+    const updateTimeAtIndex = (index, value) => {
+        setPillForm((prev) => {
+            const next = [...prev.takeTimes];
+            next[index] = value;
+            return { ...prev, takeTimes: next };
+        });
+    };
+
+    const addTimeField = () => {
+        setPillForm((prev) => ({ ...prev, takeTimes: [...prev.takeTimes, ""] }));
+    };
+
+    const removeTimeField = (index) => {
+        setPillForm((prev) => {
+            const next = prev.takeTimes.filter((_, i) => i !== index);
+            return { ...prev, takeTimes: next.length ? next : [""] };
+        });
+    };
+
+    const formatTime = (value) => {
+        if (!value) return "";
+        const d = new Date(`1970-01-01T${value}:00`);
+        if (Number.isNaN(d.getTime())) return value;
+        return d.toLocaleTimeString(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+        });
+    };
+
+    const frequencyText = (days) => {
+        if (days === 1) return "daily";
+        return `every ${days} days`;
+    };
+
+    const updateDatabasePills = async (pillReminder) => {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) {
+            console.error('No auth token available');
+            return;
+        }
+
+        await fetch('http://localhost:3000/api/users', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(pillReminder)
+        });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        const pillName = pillForm.pillName.trim();
+        const dosage = pillForm.dosage.trim();
+        const intervalDays = pillForm.intervalDays;
+
+        const cleanedTimes = pillForm.takeTimes
+            .map((t) => t.trim())
+            .filter(Boolean);
+
+        if (
+            !pillName ||
+            !dosage ||
+            !intervalDays ||
+            intervalDays < 1 ||
+            cleanedTimes.length === 0
+        )
+            return;
+
+        const timesLabel = cleanedTimes.map(formatTime).join(", ");
+        const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
+
+        const newPill = {
+            id: Date.now(),
+            name: "New Person",
+            medicine: `${pillName} (${dosage})`,
+            time: timeLabel,
+            status: "pending",
+        };
+
+        setCurrentPills((prev) => [...prev, newPill]);
+        closeAddModal();
+    };
+
+    return (
+        <div className="dashboard-page">
+            <header className="dashboard-header">
+                <h1>Dashboard</h1>
+                <div className="header-actions">
+                    <button
+                        className="add-link-btn"
+                        onClick={() => openLinkModal('caregiver')}
+                    >
+                        + Add Caregiver
+                    </button>
+                    <button
+                        className="add-link-btn"
+                        onClick={() => openLinkModal('patient')}
+                    >
+                        + Add Patient
+                    </button>
+                </div>
+            </header>
+
+            <main className="dashboard-content">
+                <section className="current-pills-section">
+                    <h2>
+                        Current Pills{" "}
+                        <span style={{ fontWeight: 500, fontSize: "0.95rem" }}>
+                            ({totalPills} total)
+                        </span>
+                    </h2>
+
+                    <div className="pill-cards-container">
+                        {currentPills.map(({ id, name, medicine, time, status }) => (
+                            <div key={id} className="pill-card">
+                                <div className="pill-header">
+                                    <span className="medicine-name">{medicine}</span>
+                                    <span className={`status-icon ${status}`}>
+                                        {status === "taken" && "✓"}
+                                        {status === "missed" && "x"}
+                                        {status === "pending" && "..."}
+                                    </span>
+                                </div>
+
+                                <div className="pill-details">
+                                    <div className="person-name">{name}</div>
+                                    <div className="pill-time">{time}</div>
+                                </div>
+                            </div>
+                        ))}
+
                         <button
-                          key={g.label}
-                          type="button"
-                          className="autocomplete-item autocomplete-button"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => chooseBrandGroup(g.label)}
-                          disabled={g.label === "Keep typing..."}
+                            type="button"
+                            className="pill-card add-card"
+                            onClick={() => setIsAddModalOpen(true)}
                         >
-                          {g.label}
-                          {g.count > 0 ? ` (${g.count})` : ""}
+                            <span className="plus-sign">+</span>
+                            <div>Add Pill</div>
                         </button>
-                      ))}
-                  </div>
-                )}
-              </label>
-
-              <label className="modal-label">
-                Product type
-                <select
-                  className="modal-input"
-                  value={selectedProductId}
-                  onChange={(e) => chooseProduct(e.target.value)}
-                  disabled={!selectedBrand || productOptions.length === 0}
-                  required
-                >
-                  <option value="">
-                    {selectedBrand
-                      ? productOptions.length
-                        ? "Select a product"
-                        : "No products found"
-                      : "Select a brand first"}
-                  </option>
-                  {productOptions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                      {p.din ? ` (DIN ${p.din})` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="modal-label">
-                Dosage
-                <input
-                  className="modal-input"
-                  name="dosage"
-                  value={pillForm.dosage}
-                  onChange={handleChange}
-                  placeholder="e.g., 500 mg"
-                  required
-                />
-              </label>
-
-              <label className="modal-label">
-                Times per day
-                <div className="times-list">
-                  {pillForm.takeTimes.map((t, idx) => (
-                    <div key={idx} className="time-row">
-                      <input
-                        className="modal-input"
-                        type="time"
-                        value={t}
-                        onChange={(e) => updateTimeAtIndex(idx, e.target.value)}
-                        required={idx === 0}
-                      />
-                      <button
-                        type="button"
-                        className="icon-btn"
-                        onClick={() => removeTimeField(idx)}
-                        aria-label="Remove time"
-                        title="Remove time"
-                      >
-                        x
-                      </button>
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="link-btn"
-                    onClick={addTimeField}
-                  >
-                    + Add another time
-                  </button>
+                </section>
+
+                <section className="notifications-section">
+                    <h2>Notifications</h2>
+                    {notifications.map(({ id, message, date }) => (
+                        <div key={id} className="notification-item">
+                            <div>{message}</div>
+                            <small>{date}</small>
+                        </div>
+                    ))}
+                </section>
+            </main>
+
+            {isAddModalOpen && (
+                <div
+                    className="modal-overlay"
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) closeAddModal();
+                    }}
+                >
+                    <div className="modal" role="dialog" aria-modal="true">
+                        <div className="modal-header">
+                            <h3 className="modal-title">Add Pill</h3>
+                            <button
+                                type="button"
+                                className="modal-close"
+                                onClick={closeAddModal}
+                                aria-label="Close"
+                            >
+                                x
+                            </button>
+                        </div>
+
+                        <form className="modal-body" onSubmit={handleSubmit}>
+                            <label className="modal-label" style={{ position: "relative" }}>
+                                Medicine
+                                <input
+                                    className="modal-input"
+                                    value={brandQuery}
+                                    onChange={(e) => {
+                                        setBrandQuery(e.target.value);
+                                        setSelectedBrand("");
+                                        setProductOptions([]);
+                                        setSelectedProductId("");
+                                        setPillForm((prev) => ({ ...prev, pillName: "" }));
+                                        setIsBrandDropdownOpen(true);
+                                    }}
+                                    onFocus={() => {
+                                        if (brandQuery.trim().length > 0)
+                                            setIsBrandDropdownOpen(true);
+                                    }}
+                                    onBlur={() => {
+                                        setTimeout(() => setIsBrandDropdownOpen(false), 150);
+                                    }}
+                                    placeholder="Type a brand (e.g., tylenol)"
+                                    autoComplete="off"
+                                    autoFocus
+                                    required
+                                />
+                                {isBrandDropdownOpen && (
+                                    <div className="autocomplete-dropdown">
+                                        {isLoadingSuggestions && (
+                                            <div className="autocomplete-item">Loading...</div>
+                                        )}
+
+                                        {!isLoadingSuggestions && suggestionsError && (
+                                            <div className="autocomplete-item">
+                                                {suggestionsError}
+                                            </div>
+                                        )}
+
+                                        {!isLoadingSuggestions &&
+                                            !suggestionsError &&
+                                            brandGroups.length === 0 && (
+                                                <div className="autocomplete-item">No matches</div>
+                                            )}
+
+                                        {!isLoadingSuggestions &&
+                                            !suggestionsError &&
+                                            brandGroups.map((g) => (
+                                                <button
+                                                    key={g.label}
+                                                    type="button"
+                                                    className="autocomplete-item autocomplete-button"
+                                                    onMouseDown={(e) => e.preventDefault()}
+                                                    onClick={() => chooseBrandGroup(g.label)}
+                                                    disabled={g.label === "Keep typing..."}
+                                                >
+                                                    {g.label}
+                                                    {g.count > 0 ? ` (${g.count})` : ""}
+                                                </button>
+                                            ))}
+                                    </div>
+                                )}
+                            </label>
+
+                            {/* <label className="modal-label">
+                                Product type
+                                <select
+                                    className="modal-input"
+                                    value={selectedProductId}
+                                    onChange={(e) => chooseProduct(e.target.value)}
+                                    disabled={!selectedBrand || productOptions.length === 0}
+                                    required
+                                >
+                                    <option value="">
+                                        {selectedBrand
+                                            ? productOptions.length
+                                                ? "Select a product"
+                                                : "No products found"
+                                            : "Select a brand first"}
+                                    </option>
+                                    {productOptions.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.label}
+                                            {p.din ? ` (DIN ${p.din})` : ""}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label> */}
+
+                            <label className="modal-label">
+                                Dosage
+                                <input
+                                    className="modal-input"
+                                    name="dosage"
+                                    value={pillForm.dosage}
+                                    onChange={handleChange}
+                                    placeholder="e.g., 500 mg"
+                                    required
+                                />
+                            </label>
+
+                            <label className="modal-label">
+                                Times per day
+                                <div className="times-list">
+                                    {pillForm.takeTimes.map((t, idx) => (
+                                        <div key={idx} className="time-row">
+                                            <input
+                                                className="modal-input"
+                                                type="time"
+                                                value={t}
+                                                onChange={(e) => updateTimeAtIndex(idx, e.target.value)}
+                                                required={idx === 0}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="icon-btn"
+                                                onClick={() => removeTimeField(idx)}
+                                                aria-label="Remove time"
+                                                title="Remove time"
+                                            >
+                                                x
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        className="link-btn"
+                                        onClick={addTimeField}
+                                    >
+                                        + Add another time
+                                    </button>
+                                </div>
+                            </label>
+
+                            <label className="modal-label">
+                                Repeat
+                                <div className="repeat-row">
+                                    <span>Once every</span>
+                                    <input
+                                        className="modal-input repeat-days"
+                                        name="intervalDays"
+                                        value={pillForm.intervalDays}
+                                        onChange={handleChange}
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        required
+                                    />
+                                    <span>day(s)</span>
+                                </div>
+                            </label>
+
+                            <div className="modal-actions">
+                                <button
+                                    type="button"
+                                    className="modal-btn secondary"
+                                    onClick={closeAddModal}
+                                >
+                                    Cancel
+                                </button>
+                                <button type="submit" className="modal-btn primary">
+                                    Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-              </label>
+            )}
 
-              <label className="modal-label">
-                Repeat
-                <div className="repeat-row">
-                  <span>Once every</span>
-                  <input
-                    className="modal-input repeat-days"
-                    name="intervalDays"
-                    value={pillForm.intervalDays}
-                    onChange={handleChange}
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                  />
-                  <span>day(s)</span>
+            {isLinkModalOpen && (
+                <div
+                    className="modal-overlay"
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) closeLinkModal();
+                    }}
+                >
+                    <div className="modal" role="dialog" aria-modal="true">
+                        <div className="modal-header">
+                            <h3 className="modal-title">
+                                Add {linkType === 'caregiver' ? 'Caregiver' : 'Patient'}
+                            </h3>
+                            <button
+                                type="button"
+                                className="modal-close"
+                                onClick={closeLinkModal}
+                                aria-label="Close"
+                            >
+                                x
+                            </button>
+                        </div>
+
+                        <form className="modal-body" onSubmit={handleLinkUser}>
+                            <p className="modal-hint">
+                                Enter the email of the {linkType} you want to link with.
+                            </p>
+
+                            <label className="modal-label">
+                                Email
+                                <input
+                                    className="modal-input"
+                                    type="email"
+                                    value={linkEmail}
+                                    onChange={(e) => setLinkEmail(e.target.value)}
+                                    placeholder="Enter email address"
+                                    autoFocus
+                                    required
+                                />
+                            </label>
+
+                            {linkError && <p className="error-message">{linkError}</p>}
+                            {linkSuccess && <p className="success-message">{linkSuccess}</p>}
+
+                            <div className="modal-actions">
+                                <button
+                                    type="button"
+                                    className="modal-btn secondary"
+                                    onClick={closeLinkModal}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="modal-btn primary"
+                                    disabled={isLinking}
+                                >
+                                    {isLinking ? 'Linking...' : 'Link'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-              </label>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="modal-btn secondary"
-                  onClick={closeAddModal}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="modal-btn primary">
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
+            )}
         </div>
-      )}
-
-      {isLinkModalOpen && (
-        <div
-          className="modal-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeLinkModal();
-          }}
-        >
-          <div className="modal" role="dialog" aria-modal="true">
-            <div className="modal-header">
-              <h3 className="modal-title">
-                Add {linkType === 'caregiver' ? 'Caregiver' : 'Patient'}
-              </h3>
-              <button
-                type="button"
-                className="modal-close"
-                onClick={closeLinkModal}
-                aria-label="Close"
-              >
-                x
-              </button>
-            </div>
-
-            <form className="modal-body" onSubmit={handleLinkUser}>
-              <p className="modal-hint">
-                Enter the email of the {linkType} you want to link with.
-              </p>
-
-              <label className="modal-label">
-                Email
-                <input
-                  className="modal-input"
-                  type="email"
-                  value={linkEmail}
-                  onChange={(e) => setLinkEmail(e.target.value)}
-                  placeholder="Enter email address"
-                  autoFocus
-                  required
-                />
-              </label>
-
-              {linkError && <p className="error-message">{linkError}</p>}
-              {linkSuccess && <p className="success-message">{linkSuccess}</p>}
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="modal-btn secondary"
-                  onClick={closeLinkModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="modal-btn primary"
-                  disabled={isLinking}
-                >
-                  {isLinking ? 'Linking...' : 'Link'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    );
 }
 
 export default Dashboard;
