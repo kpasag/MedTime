@@ -8,22 +8,24 @@ const router = express.Router();
 // Create user after signup
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { role } = req.body;
+    console.log('Creating user:', req.user.uid, req.user.email);
 
     const existingUser = await User.findOne({ uid: req.user.uid });
     if (existingUser) {
+      console.log('User already exists:', existingUser._id);
       return res.status(400).json({ error: 'User already exists' });
     }
 
     const user = new User({
       uid: req.user.uid,
-      email: req.user.email,
-      role
+      email: req.user.email
     });
 
     await user.save();
+    console.log('User created successfully:', user._id);
     res.status(201).json(user);
   } catch (error) {
+    console.error('Error creating user:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -83,17 +85,21 @@ router.post('/link-caregiver', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Cannot link yourself' });
     }
 
-    // Add caregiver to patient's list
-    if (!patient.linkedCaregivers.some(id => id.equals(caregiver._id))) {
-      patient.linkedCaregivers.push(caregiver._id);
-      await patient.save();
+    // Check if already linked
+    if (patient.linkedCaregivers.some(id => id.toString() === caregiver._id.toString())) {
+      return res.status(400).json({ error: 'Caregiver already linked' });
     }
 
-    // Add patient to caregiver's list
-    if (!caregiver.linkedPatients.some(id => id.equals(patient._id))) {
-      caregiver.linkedPatients.push(patient._id);
-      await caregiver.save();
-    }
+    // Use $addToSet to prevent duplicates at database level
+    await User.updateOne(
+      { _id: patient._id },
+      { $addToSet: { linkedCaregivers: caregiver._id } }
+    );
+
+    await User.updateOne(
+      { _id: caregiver._id },
+      { $addToSet: { linkedPatients: patient._id } }
+    );
 
     res.json({ message: 'Caregiver linked successfully', caregiver: { email: caregiver.email } });
   } catch (error) {
@@ -117,17 +123,21 @@ router.post('/link-patient', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Cannot link yourself' });
     }
 
-    // Add patient to caregiver's list
-    if (!caregiver.linkedPatients.some(id => id.equals(patient._id))) {
-      caregiver.linkedPatients.push(patient._id);
-      await caregiver.save();
+    // Check if already linked
+    if (caregiver.linkedPatients.some(id => id.toString() === patient._id.toString())) {
+      return res.status(400).json({ error: 'Patient already linked' });
     }
 
-    // Add caregiver to patient's list
-    if (!patient.linkedCaregivers.some(id => id.equals(caregiver._id))) {
-      patient.linkedCaregivers.push(caregiver._id);
-      await patient.save();
-    }
+    // Use $addToSet to prevent duplicates at database level
+    await User.updateOne(
+      { _id: caregiver._id },
+      { $addToSet: { linkedPatients: patient._id } }
+    );
+
+    await User.updateOne(
+      { _id: patient._id },
+      { $addToSet: { linkedCaregivers: caregiver._id } }
+    );
 
     res.json({ message: 'Patient linked successfully', patient: { email: patient.email } });
   } catch (error) {

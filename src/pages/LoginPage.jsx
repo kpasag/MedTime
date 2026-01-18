@@ -27,7 +27,7 @@ function LoginPage() {
         const token = await userCredential.user.getIdToken();
 
         // Create user in backend
-        await fetch('http://localhost:3000/api/users', {
+        const res = await fetch('http://localhost:3000/api/users', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -35,6 +35,11 @@ function LoginPage() {
           },
           body: JSON.stringify({ username })
         });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to create user in database');
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
