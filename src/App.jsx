@@ -6,6 +6,7 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import TestBackend from './pages/testbackend'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/testbackend" element={<TestBackend />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
