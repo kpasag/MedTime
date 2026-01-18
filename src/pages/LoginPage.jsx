@@ -26,20 +26,24 @@ function LoginPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const token = await userCredential.user.getIdToken();
 
-        // Create user in backend
-        const res = await fetch('http://localhost:3000/api/users', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ username })
-        });
+        // Create user in backend (optional - don't block signup if it fails)
+        try {
+          const res = await fetch('http://localhost:3000/api/users', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ username })
+          });
 
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Failed to create user in database');
+          if (!res.ok) {
+            console.warn('Failed to create user in database, but Firebase signup was successful');
+          }
+        } catch (backendError) {
+          console.warn('Backend error during signup:', backendError);
         }
+
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
