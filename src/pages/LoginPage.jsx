@@ -3,8 +3,8 @@ import { auth } from '../../firebase.config';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut
 } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom'; // <-- for navigation
 import './LoginPage.css';
 
 function LoginPage() {
@@ -13,6 +13,8 @@ function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate(); // navigation hook
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +27,23 @@ function LoginPage() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
+
+      navigate('/dashboard');
+
+      const enableNotifications = window.confirm(
+        'Do you want to enable notifications?'
+      );
+
+      if (enableNotifications && 'Notification' in window) {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            alert('Notifications enabled!');
+          } else {
+            alert('Notifications blocked.');
+          }
+        });
+      }
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -64,7 +83,7 @@ function LoginPage() {
           </div>
 
           <button type="submit" disabled={loading}>
-            {loading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Login')}
+            {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Login'}
           </button>
         </form>
 
