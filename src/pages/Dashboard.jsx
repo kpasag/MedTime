@@ -725,7 +725,7 @@ function Dashboard() {
                                             }}
                                             title="Options"
                                         >
-                                            ⋮
+                                            •••
                                         </button>
                                         {openMenuId === id && (
                                             <div className="pill-dropdown-menu">
@@ -823,7 +823,7 @@ function Dashboard() {
                                 onClick={closeAddModal}
                                 aria-label="Close"
                             >
-                                x
+                                <img src="/images/mdi--close-box-outline.svg" alt="Close" />
                             </button>
                         </div>
 
@@ -933,7 +933,7 @@ function Dashboard() {
                                                 aria-label="Remove time"
                                                 title="Remove time"
                                             >
-                                                x
+                                                <img src="/images/mdi--close-box-outline.svg" alt="Remove" />
                                             </button>
                                         </div>
                                     ))}
@@ -1001,7 +1001,7 @@ function Dashboard() {
                                 onClick={closeLinkModal}
                                 aria-label="Close"
                             >
-                                x
+                                <img src="/images/mdi--close-box-outline.svg" alt="Close" />
                             </button>
                         </div>
 
