@@ -98,7 +98,7 @@
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(8px);
     border-radius: 10px;
-    width: 150px;
+    width: 220px;
     height: 180px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
     padding: 16px;
@@ -111,6 +111,7 @@
     font-weight: 500;
     color: #2c3e50;
     transition: transform 0.2s ease, box-shadow 0.25s ease;
+    overflow: hidden;
 }
 
 .pill-card:hover {
@@ -136,23 +137,114 @@
 .pill-header {
     display: flex;
     justify-content: space-between;
-    font-size: 1.2rem;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.pill-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: fit-content;
+}
+
+.status-badge.taken {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.missed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
 }
 
 .medicine-name {
     font-weight: 700;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+    hyphens: auto;
 }
 
-.status-icon.taken {
-    color: #27ae60;
+.pill-menu-wrapper {
+    position: relative;
 }
 
-.status-icon.missed {
+.pill-menu-btn {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px 8px;
+    color: #7f8c8d;
+    transition: color 0.2s, background 0.2s;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.pill-menu-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #2c3e50;
+}
+
+.pill-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 120px;
+    z-index: 100;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.dropdown-item {
+    width: 100%;
+    padding: 10px 16px;
+    background: white;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    transition: background 0.2s;
+    display: block;
+}
+
+.dropdown-item:hover {
+    background: #f8f9fa;
+}
+
+.dropdown-item.delete {
     color: #e74c3c;
 }
 
-.status-icon.pending {
-    color: #f39c12;
+.dropdown-item.delete:hover {
+    background: #fee;
 }
 
 .pill-details {
@@ -554,17 +646,54 @@
     border-color: #e74c3c;
 }
 
-.repeat-row {
+.repeat-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.repeat-btn {
+    padding: 8px 14px;
+    background: #ecf0f1;
+    color: #2c3e50;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.repeat-btn:hover {
+    background: #dde4e6;
+}
+
+.repeat-btn.active {
+    background: #3498db;
+    color: white;
+    border-color: #2980b9;
+}
+
+.repeat-custom {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 400;
+    gap: 6px;
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-size: 0.9rem;
     color: #2c3e50;
 }
 
-.repeat-days {
-    width: 70px;
-    text-align: center;
+.repeat-days-select {
+    min-width: 100px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
 }
 
 .modal-actions {

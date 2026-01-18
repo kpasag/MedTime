@@ -34,6 +34,9 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findOne({ uid: req.user.uid })
+      .populate('pillReminders')
+      .populate('linkedPatients', 'email')
+      .populate('linkedCaregivers', 'email');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -46,25 +49,30 @@ router.get('/me', verifyToken, async (req, res) => {
 });
 
 // Add reminder
-router.put('/add-reminder', verifyToken, async (req, res) => {
+router.post('/add-reminder', verifyToken, async (req, res) => {
   try {
-    const reminder = new PillReminder({
-      name: req.body.name,
-      timesPerDay: req.body.timesPerDay,
-      frequencyInDays: req.body.frequencyInDays
-    });
-    const user = await User.updateOne(
-      { uid: req.user.uid },
-      { $push: { pillReminders: reminder } }
-    )
-    user.save()
+    const { name, dosage, timesPerDay, frequencyInDays } = req.body;
 
-    if (!user) {
+    const reminder = new PillReminder({
+      name,
+      dosage,
+      timesPerDay,
+      frequencyInDays
+    });
+    await reminder.save();
+
+    const result = await User.updateOne(
+      { uid: req.user.uid },
+      { $push: { pillReminders: reminder._id } }
+    );
+
+    if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json(reminder);
+    res.status(201).json(reminder);
   } catch (error) {
+    console.error('Error adding reminder:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -141,6 +149,54 @@ router.post('/link-patient', verifyToken, async (req, res) => {
 
     res.json({ message: 'Patient linked successfully', patient: { email: patient.email } });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a reminder
+router.delete('/delete-reminder/:reminderId', verifyToken, async (req, res) => {
+  try {
+    const { reminderId } = req.params;
+
+    // Remove from user's pill reminders array
+    const result = await User.updateOne(
+      { uid: req.user.uid },
+      { $pull: { pillReminders: reminderId } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete the reminder document
+    await PillReminder.findByIdAndDelete(reminderId);
+
+    res.json({ message: 'Reminder deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting reminder:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update a reminder
+router.put('/update-reminder/:reminderId', verifyToken, async (req, res) => {
+  try {
+    const { reminderId } = req.params;
+    const { name, dosage, timesPerDay, frequencyInDays } = req.body;
+
+    const reminder = await PillReminder.findByIdAndUpdate(
+      reminderId,
+      { name, dosage, timesPerDay, frequencyInDays },
+      { new: true, runValidators: true }
+    );
+
+    if (!reminder) {
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
+
+    res.json(reminder);
+  } catch (error) {
+    console.error('Error updating reminder:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,18 +1,13 @@
 import mongoose from 'mongoose';
 
 const pillReminderSchema = new mongoose.Schema({
-  uid: {
-    type: String,
-    required: true,
-    unique: true
-  },
   name: {
     type: String,
     required: true
   },
   dosage: {
-    type: Number,
-    require: true
+    type: String,
+    required: true
   },
   timesPerDay: [{
     type: String,
