@@ -217,7 +217,7 @@
 }
 
 .cta-contact {
-  margin-top: 18px;
+  margin-top: 32px;
   font-size: 1rem;
   color: #ffffff;
   opacity: 0.95;
@@ -255,9 +255,15 @@
   transform: translateY(30px);
 }
 
+.scroll-animate.scroll-animate-zoom {
+  transform: translateY(24px) scale(0.96);
+  filter: blur(2px);
+}
+
 .scroll-animate.in-view {
   opacity: 1;
   transform: translateX(0) translateY(0);
+  filter: blur(0);
 }
 
 @media (max-width: 768px) {
