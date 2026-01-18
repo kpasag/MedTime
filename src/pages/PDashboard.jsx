@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { auth } from "../../firebase.config";
 import "./Dashboard.css";
 
-function Dashboard() {
+function PDashboard() {
   const navigate = useNavigate();
 
   const [currentPills, setCurrentPills] = useState([]);
@@ -324,4 +324,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default PDashboard;
