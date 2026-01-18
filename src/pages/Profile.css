@@ -1,0 +1,18 @@
+/* Profile Button Hover Effects */
+button[style*="backgroundColor"] {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button[style*="backgroundColor"]:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button[style*="backgroundColor"]:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

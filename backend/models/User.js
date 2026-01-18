@@ -10,6 +10,24 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  username: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  firstName: {
+    type: String
+  },
+  lastName: {
+    type: String
+  },
+  dateOfBirth: {
+    type: Date
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', 'prefer_not_to_say']
+  },
   pillReminders: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PillReminder'
@@ -21,6 +39,36 @@ const userSchema = new mongoose.Schema({
   linkedCaregivers: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  }],
+  // Pending invitations sent by this user
+  pendingInvitationsSent: [{
+    to: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    type: {
+      type: String,
+      enum: ['caregiver', 'patient']
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  // Pending invitations received by this user
+  pendingInvitationsReceived: [{
+    from: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    type: {
+      type: String,
+      enum: ['caregiver', 'patient']
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
   createdAt: {
     type: Date,
