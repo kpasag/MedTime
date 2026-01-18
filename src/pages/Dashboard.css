@@ -471,22 +471,221 @@
     z-index: 1;
 }
 
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.notifications-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.unread-badge {
+    background: linear-gradient(135deg, var(--red-400), var(--red-500));
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+    min-width: 24px;
+    text-align: center;
+}
+
+.mark-all-read-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mark-all-read-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.notification-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.filter-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    color: #2c3e50;
+    border-color: transparent;
+}
+
+.filter-btn.active.upcoming {
+    background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+    color: white;
+}
+
+.filter-btn.active.pending {
+    background: linear-gradient(135deg, var(--blue-400), var(--blue-500));
+    color: white;
+}
+
+.filter-btn.active.taken {
+    background: linear-gradient(135deg, var(--green-400), var(--green-500));
+    color: white;
+}
+
+.filter-btn.active.missed {
+    background: linear-gradient(135deg, var(--red-400), var(--red-500));
+    color: white;
+}
+
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
 .notification-item {
     background: rgba(255, 255, 255, 0.85);
     border: none;
     padding: 14px 20px;
     border-radius: 10px;
-    margin-bottom: 12px;
     font-size: 1rem;
     color: #2c3e50;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
 }
 
-.notification-item small {
+.notification-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.notification-item.unread {
+    background: rgba(255, 255, 255, 0.95);
+    border-left-color: var(--blue-400);
+}
+
+.notification-item.read {
+    opacity: 0.7;
+}
+
+.notification-item.upcoming {
+    border-left-color: #94a3b8;
+}
+
+.notification-item.pending {
+    border-left-color: var(--blue-400);
+}
+
+.notification-item.taken {
+    border-left-color: var(--green-400);
+}
+
+.notification-item.missed {
+    border-left-color: var(--red-400);
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-type-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.notification-item.upcoming .notification-type-badge {
+    background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+    color: white;
+}
+
+.notification-item.pending .notification-type-badge {
+    background: linear-gradient(135deg, var(--blue-400), var(--blue-500));
+    color: white;
+}
+
+.notification-item.taken .notification-type-badge {
+    background: linear-gradient(135deg, var(--green-400), var(--green-500));
+    color: white;
+}
+
+.notification-item.missed .notification-type-badge {
+    background: linear-gradient(135deg, var(--red-400), var(--red-500));
+    color: white;
+}
+
+.notification-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+    color: #1a2634;
+}
+
+.notification-message {
+    font-size: 0.9rem;
+    color: #5a6c7d;
+    line-height: 1.4;
+}
+
+.notification-time {
     color: #7f8c8d;
     display: block;
-    margin-top: 6px;
-    font-size: 0.85rem;
+    margin-top: 8px;
+    font-size: 0.8rem;
+}
+
+.notification-delete-btn {
+    background: transparent;
+    border: none;
+    color: #95a5a6;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.notification-delete-btn:hover {
+    color: var(--red-500);
 }
 
 .notification-placeholder {

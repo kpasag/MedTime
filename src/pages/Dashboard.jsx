@@ -117,8 +117,11 @@ function Dashboard() {
   const [currentPills, setCurrentPills] = useState([]);
   const [patientList, setPatientList] = useState([]);
 
-  const notifications = [
-  ];
+  // Notifications state
+  const [notifications, setNotifications] = useState([]);
+  const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'upcoming', 'pending', 'taken', 'missed'
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -363,6 +366,198 @@ function Dashboard() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Load notifications from backend
+  const fetchNotifications = async (filterType = 'all') => {
+    setLoadingNotifications(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const token = await user.getIdToken();
+      const queryParams = filterType !== 'all' ? `?type=${filterType}` : '';
+
+      const response = await fetch(`http://localhost:3000/api/users/notifications${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const token = await user.getIdToken();
+      const response = await fetch('http://localhost:3000/api/users/notifications/unread-count', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadCount(data.count);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  // Load notifications on mount
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchNotifications(notificationFilter);
+        fetchUnreadCount();
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Reload notifications when filter changes
+  useEffect(() => {
+    if (auth.currentUser) {
+      fetchNotifications(notificationFilter);
+    }
+  }, [notificationFilter]);
+
+  // Mark notification as read
+  const markNotificationRead = async (notificationId) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+
+      await fetch(`http://localhost:3000/api/users/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      setNotifications(prev =>
+        prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllNotificationsRead = async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+
+      await fetch('http://localhost:3000/api/users/notifications/mark-all-read', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  // Delete notification
+  const deleteNotification = async (notificationId) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+
+      await fetch(`http://localhost:3000/api/users/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const notification = notifications.find(n => n._id === notificationId);
+      if (notification && !notification.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+      setNotifications(prev => prev.filter(n => n._id !== notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  // Create a notification (used when medication status changes)
+  const createNotification = async (type, pillReminder, scheduledTime) => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+
+      const titles = {
+        upcoming: 'Upcoming Medication',
+        pending: 'Time to Take Medication',
+        taken: 'Medication Taken',
+        missed: 'Missed Medication'
+      };
+
+      const messages = {
+        upcoming: `${pillReminder.name} is coming up at ${scheduledTime}`,
+        pending: `It's time to take ${pillReminder.name}`,
+        taken: `You've taken ${pillReminder.name}`,
+        missed: `You missed ${pillReminder.name} scheduled for ${scheduledTime}`
+      };
+
+      await fetch('http://localhost:3000/api/users/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          type,
+          title: titles[type],
+          message: messages[type],
+          pillReminderId: pillReminder._id,
+          scheduledTime
+        })
+      });
+
+      // Refresh notifications
+      fetchNotifications(notificationFilter);
+      fetchUnreadCount();
+    } catch (error) {
+      console.error('Error creating notification:', error);
+    }
+  };
+
+  // Format notification date
+  const formatNotificationDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
 
   // Calculate status based on time and last taken
   const calculateStatus = (time, lastTakenArray = [], frequencyInDays) => {
@@ -626,16 +821,24 @@ function Dashboard() {
 
       if (response.ok) {
         const updatedReminder = await response.json();
+        const newStatus = currentStatus === 'taken' ? 'pending' : 'taken';
+
         // Update the pill status locally
         setCurrentPills(prev => prev.map(p =>
           p.id === pillId
             ? {
               ...p,
-              status: currentStatus === 'taken' ? 'pending' : 'taken',
+              status: newStatus,
               lastTaken: updatedReminder.lastTaken
             }
             : p
         ));
+
+        // Create notification for taken medication
+        if (newStatus === 'taken') {
+          const medicineName = pill.medicine.split(' (')[0];
+          createNotification('taken', { _id: reminderId, name: medicineName }, rawTime);
+        }
       }
     } catch (error) {
       console.error('Error marking pill:', error);
@@ -732,7 +935,7 @@ function Dashboard() {
       </header>
 
       <main className="dashboard-content">
-        <div className="dashboard-user-info">
+        <div className="dashboard-user-info">  
           <section className="current-pills-section">
             <h2>
               Current Pills{" "}
@@ -740,12 +943,14 @@ function Dashboard() {
                 ({totalPills} total)
               </span>
             </h2>
+
             <div className="pill-cards-container">
               {currentPills.map(({ id, name, medicine, time, status, intervalDays }) => {
                 // Extract medicine name and dosage
                 const medicineMatch = medicine.match(/^(.+?)\s*\((.+?)\)$/);
                 const medicineName = medicineMatch ? medicineMatch[1] : medicine;
                 const dosage = medicineMatch ? medicineMatch[2] : '';
+
                 return (
                   <div
                     key={id}
@@ -836,6 +1041,7 @@ function Dashboard() {
                         )}
                       </div>
                     </div>
+
                     <div className="pill-details">
                       <div className="person-name">{name}</div>
                       <div className="pill-time">{time}</div>
@@ -851,6 +1057,7 @@ function Dashboard() {
                   </div>
                 );
               })}
+
               <button
                 type="button"
                 className="pill-card add-card"
@@ -862,18 +1069,70 @@ function Dashboard() {
             </div>
           </section>
           <section className="notifications-section">
-            <h2>Notifications</h2>
-            {notifications.length === 0 ? (
+            <div className="notifications-header">
+              <h2>
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="unread-badge">{unreadCount}</span>
+                )}
+              </h2>
+              {notifications.length > 0 && (
+                <button
+                  className="mark-all-read-btn"
+                  onClick={markAllNotificationsRead}
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+
+            <div className="notification-filters">
+              {['all', 'upcoming', 'pending', 'taken', 'missed'].map((filter) => (
+                <button
+                  key={filter}
+                  className={`filter-btn ${notificationFilter === filter ? 'active' : ''} ${filter !== 'all' ? filter : ''}`}
+                  onClick={() => setNotificationFilter(filter)}
+                >
+                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {loadingNotifications ? (
               <div className="notification-placeholder">
-                No new notifications
+                Loading notifications...
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="notification-placeholder">
+                No {notificationFilter !== 'all' ? notificationFilter : ''} notifications
               </div>
             ) : (
-              notifications.map(({ id, message, date }) => (
-                <div key={id} className="notification-item">
-                  <div>{message}</div>
-                  <small>{date}</small>
-                </div>
-              ))
+              <div className="notifications-list">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    className={`notification-item ${notification.type} ${notification.read ? 'read' : 'unread'}`}
+                    onClick={() => !notification.read && markNotificationRead(notification._id)}
+                  >
+                    <div className="notification-content">
+                      <div className="notification-type-badge">{notification.type}</div>
+                      <div className="notification-title">{notification.title}</div>
+                      <div className="notification-message">{notification.message}</div>
+                      <small className="notification-time">{formatNotificationDate(notification.createdAt)}</small>
+                    </div>
+                    <button
+                      className="notification-delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification(notification._id);
+                      }}
+                      title="Delete notification"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </section>
         </div>
@@ -897,9 +1156,7 @@ function Dashboard() {
             <div className="profile-muted">No patients linked yet.</div>
           )}
         </section>
-
       </main>
-
       {isAddModalOpen && (
         <div
           className="modal-overlay"

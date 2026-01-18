@@ -70,6 +70,23 @@ const userSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  // Notification preferences
+  notificationPreferences: {
+    email: {
+      enabled: { type: Boolean, default: true },
+      upcoming: { type: Boolean, default: true },
+      pending: { type: Boolean, default: true },
+      taken: { type: Boolean, default: false },
+      missed: { type: Boolean, default: true }
+    },
+    inApp: {
+      enabled: { type: Boolean, default: true },
+      upcoming: { type: Boolean, default: true },
+      pending: { type: Boolean, default: true },
+      taken: { type: Boolean, default: true },
+      missed: { type: Boolean, default: true }
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

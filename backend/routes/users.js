@@ -2,6 +2,7 @@ import express from 'express';
 import User from '../models/User.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import PillReminder from '../models/PillReminder.js';
+import Notification from '../models/Notification.js';
 
 const router = express.Router();
 
@@ -519,6 +520,234 @@ router.post('/unmark-taken/:reminderId', verifyToken, async (req, res) => {
     res.json(reminder);
   } catch (error) {
     console.error('Error unmarking pill:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== NOTIFICATION ROUTES ====================
+
+// Get all notifications for current user (with optional filtering)
+router.get('/notifications', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { type, unreadOnly } = req.query;
+
+    const filter = { user: user._id };
+
+    if (type && ['upcoming', 'pending', 'taken', 'missed'].includes(type)) {
+      filter.type = type;
+    }
+
+    if (unreadOnly === 'true') {
+      filter.read = false;
+    }
+
+    const notifications = await Notification.find(filter)
+      .populate('pillReminder', 'name dosage')
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get unread notification count
+router.get('/notifications/unread-count', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const count = await Notification.countDocuments({ user: user._id, read: false });
+    res.json({ count });
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark notification as read
+router.put('/notifications/:notificationId/read', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.notificationId, user: user._id },
+      { read: true },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json(notification);
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark all notifications as read
+router.put('/notifications/mark-all-read', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    await Notification.updateMany(
+      { user: user._id, read: false },
+      { read: true }
+    );
+
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a notification
+router.delete('/notifications/:notificationId', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const notification = await Notification.findOneAndDelete({
+      _id: req.params.notificationId,
+      user: user._id
+    });
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json({ message: 'Notification deleted' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear all notifications (optionally by type)
+router.delete('/notifications', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { type } = req.query;
+    const filter = { user: user._id };
+
+    if (type && ['upcoming', 'pending', 'taken', 'missed'].includes(type)) {
+      filter.type = type;
+    }
+
+    await Notification.deleteMany(filter);
+    res.json({ message: 'Notifications cleared' });
+  } catch (error) {
+    console.error('Error clearing notifications:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a notification (internal use - can be called when medication status changes)
+router.post('/notifications', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const { type, title, message, pillReminderId, scheduledTime } = req.body;
+
+    if (!['upcoming', 'pending', 'taken', 'missed'].includes(type)) {
+      return res.status(400).json({ error: 'Invalid notification type' });
+    }
+
+    const notification = new Notification({
+      user: user._id,
+      type,
+      title,
+      message,
+      pillReminder: pillReminderId || null,
+      scheduledTime: scheduledTime || null
+    });
+
+    await notification.save();
+    res.status(201).json(notification);
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get notification preferences
+router.get('/notification-preferences', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Return default preferences if not set
+    const defaultPreferences = {
+      email: {
+        enabled: true,
+        upcoming: true,
+        pending: true,
+        taken: false,
+        missed: true
+      },
+      inApp: {
+        enabled: true,
+        upcoming: true,
+        pending: true,
+        taken: true,
+        missed: true
+      }
+    };
+
+    res.json(user.notificationPreferences || defaultPreferences);
+  } catch (error) {
+    console.error('Error fetching notification preferences:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update notification preferences
+router.put('/notification-preferences', verifyToken, async (req, res) => {
+  try {
+    const { email, inApp } = req.body;
+
+    const user = await User.findOneAndUpdate(
+      { uid: req.user.uid },
+      { notificationPreferences: { email, inApp } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user.notificationPreferences);
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
     res.status(500).json({ error: error.message });
   }
 });
