@@ -1,7 +1,6 @@
 .dashboard-page {
     min-height: 100vh;
     background-color: #fff;
-    /* white background */
     font-family: 'Roboto', Arial, sans-serif;
     display: flex;
     flex-direction: column;
@@ -23,13 +22,11 @@
     margin-top: 20px;
     display: flex;
     gap: 40px;
-    /* REMOVE any background color here! */
-    /* background-color: transparent or unset */
     background-color: transparent;
 }
 
-/* Left side: Current Pills - take half width */
-.current-pills-section {
+.current-pills-section,
+.notifications-section {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -40,15 +37,6 @@
     flex-wrap: wrap;
     gap: 20px;
 }
-
-/* Right side: Notifications - take half width */
-.notifications-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Keep the rest the same... */
 
 .pill-card {
     background: white;
@@ -65,20 +53,33 @@
     position: relative;
     font-weight: 500;
     color: #2c3e50;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
 
-.pill-card .pill-header {
+.pill-card.clickable {
+    cursor: pointer;
+    border: 2px solid #27ae60;
+    box-shadow: 0 0 8px #27ae60aa;
+}
+
+.pill-card.clickable:hover {
+    box-shadow: 0 0 12px #27ae60cc;
+    transform: translateY(-2px);
+}
+
+.pill-card.late {
+    border-color: #e74c3c;
+    box-shadow: 0 0 12px #e74c3caa;
+}
+
+.pill-header {
     display: flex;
     justify-content: space-between;
     font-size: 1.2rem;
 }
 
-.pill-card .medicine-name {
+.medicine-name {
     font-weight: 700;
-}
-
-.pill-card .status-icon {
-    font-size: 1.5rem;
 }
 
 .status-icon.taken {
@@ -93,7 +94,7 @@
     color: #f39c12;
 }
 
-.pill-card .pill-details {
+.pill-details {
     font-size: 0.9rem;
     display: flex;
     flex-direction: column;
@@ -150,144 +151,4 @@
     display: block;
     margin-top: 6px;
     font-size: 0.85rem;
-}
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgb(0 0 0 / 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    z-index: 9999;
-}
-
-.modal {
-    width: min(480px, 100%);
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
-    overflow: hidden;
-}
-
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 18px;
-    border-bottom: 1px solid #e6e6e6;
-}
-
-.modal-title {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #2c3e50;
-}
-
-.modal-close {
-    border: none;
-    background: transparent;
-    font-size: 1.6rem;
-    line-height: 1;
-    cursor: pointer;
-    color: #2c3e50;
-}
-
-.modal-body {
-    padding: 16px 18px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.modal-label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 0.95rem;
-    color: #2c3e50;
-    font-weight: 600;
-}
-
-.modal-input {
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid #d7d7d7;
-    font-size: 0.95rem;
-    outline: none;
-}
-
-.modal-input:focus {
-    border-color: #2c3e50;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 6px;
-}
-
-.modal-btn {
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    font-weight: 700;
-}
-
-.modal-btn.secondary {
-    background: #fff;
-    border-color: #d7d7d7;
-    color: #2c3e50;
-}
-
-.modal-btn.primary {
-    background: #2c3e50;
-    color: #fff;
-}
-
-.repeat-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.modal-input.repeat-days {
-    width: 90px;
-}
-
-.times-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.time-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.icon-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 8px;
-    border: 1px solid #d7d7d7;
-    background: #fff;
-    cursor: pointer;
-    font-size: 1.2rem;
-    line-height: 1;
-    color: #2c3e50;
-}
-
-.link-btn {
-    border: none;
-    background: transparent;
-    padding: 0;
-    cursor: pointer;
-    text-align: left;
-    font-weight: 700;
-    color: #2c3e50;
 }
