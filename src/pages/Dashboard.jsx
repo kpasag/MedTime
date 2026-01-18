@@ -95,6 +95,17 @@ function Dashboard() {
     return `every ${days} days`;
   };
 
+  const updateDatabasePills = async (pillReminder) => {
+    await fetch('http://localhost:3000/api/users', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: pillReminder
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -116,15 +127,17 @@ function Dashboard() {
       return;
 
     const timesLabel = cleanedTimes.map(formatTime).join(", ");
-    const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
+    // const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
 
     const newPill = {
-      id: Date.now(),
-      name: "New Person",
-      medicine: `${pillName} (${dosage})`,
-      time: timeLabel,
-      status: "pending",
+      createdAt: Date.now(),
+      name: pillName,
+      timesPerDay: timesLabel,
+      repeatFrequency: intervalDays,
+      dosage: dosage
     };
+
+    updateDatabasePills(newPill);
 
     setCurrentPills((prev) => [...prev, newPill]);
     closeAddModal();
