@@ -41,9 +41,9 @@ function PDashboard() {
                 <div className="pill-header">
                   <span className="medicine-name">{medicine}</span>
                   <span className={`status-icon ${status}`}>
-                    {status === 'taken' && '✔️'}
-                    {status === 'missed' && '❌'}
-                    {status === 'pending' && '⏳'}
+                    {status === 'taken' && 'Taken'}
+                    {status === 'missed' && 'Missed'}
+                    {status === 'pending' && 'Pending'}
                   </span>
                 </div>
 
@@ -55,7 +55,7 @@ function PDashboard() {
             ))}
 
             <button className="pill-card add-card" onClick={addNewPill}>
-              <span className="plus-sign">＋</span>
+              <span className="plus-sign">+</span>
               <div>Add Pill</div>
             </button>
           </div>

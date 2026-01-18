@@ -140,12 +140,10 @@
 }
 
 .steps {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  max-width: 1200px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
@@ -154,8 +152,6 @@
   padding: 40px 30px;
   border-radius: 12px;
   text-align: center;
-  flex: 1;
-  min-width: 200px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
@@ -191,9 +187,9 @@
   display: none;
 }
 
-@media (min-width: 768px) {
-  .step-arrow {
-    display: block;
+@media (max-width: 767px) {
+  .steps {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -216,8 +212,8 @@
   opacity: 0.95;
 }
 
-.cta-contact {
-  margin-top: 18px;
+.cta p.cta-contact {
+  margin-top: 60px;
   font-size: 1rem;
   color: #ffffff;
   opacity: 0.95;

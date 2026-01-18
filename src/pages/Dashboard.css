@@ -694,15 +694,25 @@
 .modal-close {
     background: none;
     border: none;
-    font-size: 1.5rem;
-    color: #7f8c8d;
     cursor: pointer;
     padding: 0;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    transition: opacity 0.2s;
+}
+
+.modal-close img {
+    width: 28px;
+    height: 28px;
+    display: block;
 }
 
 .modal-close:hover {
-    color: #2c3e50;
+    opacity: 0.7;
 }
 
 .modal-body {
@@ -759,8 +769,8 @@
     background: none;
     border: 1px solid #ddd;
     border-radius: 6px;
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
     cursor: pointer;
     color: #e74c3c;
     font-size: 1rem;
@@ -768,6 +778,13 @@
     align-items: center;
     justify-content: center;
     transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+}
+
+.icon-btn img {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .icon-btn:hover {
