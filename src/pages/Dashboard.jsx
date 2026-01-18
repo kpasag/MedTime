@@ -27,6 +27,15 @@ function Dashboard() {
   ];
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Link caregiver/patient modal state
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkType, setLinkType] = useState(''); // 'caregiver' or 'patient'
+  const [linkEmail, setLinkEmail] = useState('');
+  const [linkError, setLinkError] = useState('');
+  const [linkSuccess, setLinkSuccess] = useState('');
+  const [isLinking, setIsLinking] = useState(false);
+
   const [pillForm, setPillForm] = useState({
     pillName: "",
     dosage: "",
@@ -71,6 +80,67 @@ function Dashboard() {
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
+    }
+  };
+
+  // Link modal functions
+  const openLinkModal = (type) => {
+    setLinkType(type);
+    setLinkEmail('');
+    setLinkError('');
+    setLinkSuccess('');
+    setIsLinkModalOpen(true);
+  };
+
+  const closeLinkModal = () => {
+    setIsLinkModalOpen(false);
+    setLinkType('');
+    setLinkEmail('');
+    setLinkError('');
+    setLinkSuccess('');
+  };
+
+  const handleLinkUser = async (e) => {
+    e.preventDefault();
+    if (!linkEmail.trim()) {
+      setLinkError('Please enter an email');
+      return;
+    }
+
+    setIsLinking(true);
+    setLinkError('');
+    setLinkSuccess('');
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        setLinkError('Not authenticated');
+        return;
+      }
+
+      const endpoint = linkType === 'caregiver' ? 'link-caregiver' : 'link-patient';
+      const res = await fetch(`http://localhost:3000/api/users/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ email: linkEmail.toLowerCase() })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setLinkError(data.error || 'Failed to link user');
+        return;
+      }
+
+      setLinkSuccess(`${linkType === 'caregiver' ? 'Caregiver' : 'Patient'} linked successfully!`);
+      setLinkEmail('');
+    } catch (err) {
+      setLinkError(err.message || 'Failed to link user');
+    } finally {
+      setIsLinking(false);
     }
   };
 
@@ -350,6 +420,20 @@ function Dashboard() {
     <div className="dashboard-page">
       <header className="dashboard-header">
         <h1>Dashboard</h1>
+        <div className="header-actions">
+          <button
+            className="add-link-btn"
+            onClick={() => openLinkModal('caregiver')}
+          >
+            + Add Caregiver
+          </button>
+          <button
+            className="add-link-btn"
+            onClick={() => openLinkModal('patient')}
+          >
+            + Add Patient
+          </button>
+        </div>
       </header>
 
       <main className="dashboard-content">
@@ -556,6 +640,70 @@ function Dashboard() {
                 </button>
                 <button type="submit" className="modal-btn primary">
                   Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isLinkModalOpen && (
+        <div
+          className="modal-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeLinkModal();
+          }}
+        >
+          <div className="modal" role="dialog" aria-modal="true">
+            <div className="modal-header">
+              <h3 className="modal-title">
+                Add {linkType === 'caregiver' ? 'Caregiver' : 'Patient'}
+              </h3>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={closeLinkModal}
+                aria-label="Close"
+              >
+                x
+              </button>
+            </div>
+
+            <form className="modal-body" onSubmit={handleLinkUser}>
+              <p className="modal-hint">
+                Enter the email of the {linkType} you want to link with.
+              </p>
+
+              <label className="modal-label">
+                Email
+                <input
+                  className="modal-input"
+                  type="email"
+                  value={linkEmail}
+                  onChange={(e) => setLinkEmail(e.target.value)}
+                  placeholder="Enter email address"
+                  autoFocus
+                  required
+                />
+              </label>
+
+              {linkError && <p className="error-message">{linkError}</p>}
+              {linkSuccess && <p className="success-message">{linkSuccess}</p>}
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="modal-btn secondary"
+                  onClick={closeLinkModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="modal-btn primary"
+                  disabled={isLinking}
+                >
+                  {isLinking ? 'Linking...' : 'Link'}
                 </button>
               </div>
             </form>
