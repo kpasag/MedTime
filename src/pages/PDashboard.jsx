@@ -238,7 +238,7 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
       <header className="dashboard-header">
-        <h1>Dashboard</h1>
+        <h1>Patient: {sessionStorage.getItem("viewedPatientID")}</h1>
         <div className="header-actions">
           <button
             className="add-link-btn"
