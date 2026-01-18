@@ -28,14 +28,17 @@ function LoginPage() {
 
         // Create user in backend (optional - don't block signup if it fails)
         try {
-          const res = await fetch('http://localhost:3000/api/users', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
+          const res = await fetch(
+            "https://medtime-uf84.onrender.com/api/users",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ username }),
             },
-            body: JSON.stringify({ username })
-          });
+          );
 
           if (!res.ok) {
             console.warn('Failed to create user in database, but Firebase signup was successful');

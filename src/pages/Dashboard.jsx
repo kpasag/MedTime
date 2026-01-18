@@ -205,7 +205,7 @@ function Dashboard() {
       }
 
       const endpoint = linkType === 'caregiver' ? 'link-caregiver' : 'link-patient';
-      const res = await fetch(`http://localhost:3000/api/users/${endpoint}`, {
+      const res = await fetch(`https://medtime-uf84.onrender.com/api/users/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +251,7 @@ function Dashboard() {
 
         const token = await user.getIdToken();
 
-        const response = await fetch('http://localhost:3000/api/users/me', {
+        const response = await fetch('https://medtime-uf84.onrender.com/api/users/me', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -310,7 +310,7 @@ function Dashboard() {
 
         const token = await user.getIdToken();
 
-        const response = await fetch('http://localhost:3000/api/users/reminders', {
+        const response = await fetch('https://medtime-uf84.onrender.com/api/users/reminders', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -377,7 +377,7 @@ function Dashboard() {
       const token = await user.getIdToken();
       const queryParams = filterType !== 'all' ? `?type=${filterType}` : '';
 
-      const response = await fetch(`http://localhost:3000/api/users/notifications${queryParams}`, {
+      const response = await fetch(`https://medtime-uf84.onrender.com/api/users/notifications${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -401,7 +401,7 @@ function Dashboard() {
       if (!user) return;
 
       const token = await user.getIdToken();
-      const response = await fetch('http://localhost:3000/api/users/notifications/unread-count', {
+      const response = await fetch('https://medtime-uf84.onrender.com/api/users/notifications/unread-count', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -441,7 +441,7 @@ function Dashboard() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) return;
 
-      await fetch(`http://localhost:3000/api/users/notifications/${notificationId}/read`, {
+      await fetch(`https://medtime-uf84.onrender.com/api/users/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -463,7 +463,7 @@ function Dashboard() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) return;
 
-      await fetch('http://localhost:3000/api/users/notifications/mark-all-read', {
+      await fetch('https://medtime-uf84.onrender.com/api/users/notifications/mark-all-read', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -483,7 +483,7 @@ function Dashboard() {
       const token = await auth.currentUser?.getIdToken();
       if (!token) return;
 
-      await fetch(`http://localhost:3000/api/users/notifications/${notificationId}`, {
+      await fetch(`https://medtime-uf84.onrender.com/api/users/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -520,7 +520,7 @@ function Dashboard() {
         missed: `You missed ${pillReminder.name} scheduled for ${scheduledTime}`
       };
 
-      await fetch('http://localhost:3000/api/users/notifications', {
+      await fetch('https://medtime-uf84.onrender.com/api/users/notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -688,7 +688,7 @@ function Dashboard() {
 
       if (editingPillId) {
         // Update existing pill
-        const res = await fetch(`http://localhost:3000/api/users/update-reminder/${editingPillId}`, {
+        const res = await fetch(`https://medtime-uf84.onrender.com/api/users/update-reminder/${editingPillId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -728,7 +728,7 @@ function Dashboard() {
         });
       } else {
         // Add new pill
-        const res = await fetch('http://localhost:3000/api/users/add-reminder', {
+        const res = await fetch('https://medtime-uf84.onrender.com/api/users/add-reminder', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -807,7 +807,7 @@ function Dashboard() {
         ? 'unmark-taken'
         : 'mark-taken';
 
-      const response = await fetch(`http://localhost:3000/api/users/${endpoint}/${reminderId}`, {
+      const response = await fetch(`https://medtime-uf84.onrender.com/api/users/${endpoint}/${reminderId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -858,7 +858,7 @@ function Dashboard() {
       const reminderId = pill.reminderId || pill.id.split('-')[0];
 
       const token = await auth.currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:3000/api/users/delete-reminder/${reminderId}`, {
+      const response = await fetch(`https://medtime-uf84.onrender.com/api/users/delete-reminder/${reminderId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -890,7 +890,7 @@ function Dashboard() {
       const reminderId = pill.reminderId || pill.id.split('-')[0];
 
       const token = await auth.currentUser?.getIdToken();
-      const response = await fetch(`http://localhost:3000/api/users/me`, {
+      const response = await fetch(`https://medtime-uf84.onrender.com/api/users/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

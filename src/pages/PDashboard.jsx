@@ -21,7 +21,7 @@ function PDashboard() {
 
         const token = await user.getIdToken();
 
-        const response = await fetch('http://localhost:3000/api/users/me', {
+        const response = await fetch('https://medtime-uf84.onrender.com/api/users/me', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -55,7 +55,7 @@ function PDashboard() {
         const token = await user.getIdToken();
         const patientEmail = sessionStorage.getItem("viewedPatientID");
 
-        const response = await fetch('http://localhost:3000/api/users/patient-reminders', {
+        const response = await fetch('https://medtime-uf84.onrender.com/api/users/patient-reminders', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ function PDashboard() {
         ? 'unmark-taken'
         : 'mark-taken';
 
-      const response = await fetch(`http://localhost:3000/api/users/${endpoint}/${reminderId}`, {
+      const response = await fetch(`https://medtime-uf84.onrender.com/api/users/${endpoint}/${reminderId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

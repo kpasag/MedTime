@@ -26,7 +26,7 @@ function Profile() {
         return;
       }
 
-      const res = await fetch('http://localhost:3000/api/users/me', {
+      const res = await fetch('https://medtime-uf84.onrender.com/api/users/me', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ function Profile() {
     setInviteLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/users/send-invitation', {
+      const res = await fetch('https://medtime-uf84.onrender.com/api/users/send-invitation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ function Profile() {
   const handleAcceptInvitation = async (fromUserId, relationshipType) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/users/accept-invitation', {
+      const res = await fetch('https://medtime-uf84.onrender.com/api/users/accept-invitation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ function Profile() {
   const handleRejectInvitation = async (fromUserId, relationshipType) => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/users/reject-invitation', {
+      const res = await fetch('https://medtime-uf84.onrender.com/api/users/reject-invitation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ function Profile() {
 
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/users/remove-relationship', {
+      const res = await fetch('https://medtime-uf84.onrender.com/api/users/remove-relationship', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ function Profile() {
   const handleUpdateProfile = async () => {
     try {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('http://localhost:3000/api/users/update-profile', {
+      const res = await fetch('https://medtime-uf84.onrender.com/api/users/update-profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
