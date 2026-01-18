@@ -34,8 +34,8 @@
 .floating-pill {
   position: absolute;
   border-radius: 999px;
-  transform: translate3d(var(--pill-offset-x, 0px), var(--pill-offset-y, 0px), 0);
-  transition: transform 0.08s linear;
+  transform: translate3d(var(--pill-x, 0px), var(--pill-y, 0px), 0);
+  transition: transform 0s;
   will-change: transform;
 }
 
