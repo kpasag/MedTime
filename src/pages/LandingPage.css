@@ -1,3 +1,21 @@
 main {
   background-color: #90D5FF;
 }
+
+.section-1 {
+  background-image: url('../assets/ChatGPT Image Jan 17, 2026, 03_45_42 PM.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: white;
+  text-align: center;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 2px solid #4CAF50;
+}
