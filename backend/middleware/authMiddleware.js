@@ -1,6 +1,6 @@
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
-const verifyToken = async (req, res, next) => {
+export const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,5 +17,3 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
-
-module.exports = { verifyToken };

@@ -1,7 +1,10 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const admin = require('firebase-admin');
-const dotenv = require('dotenv');
+import express from 'express';
+import mongoose from 'mongoose';
+import admin from 'firebase-admin';
+import dotenv from 'dotenv';
+import { verifyToken } from './middleware/authMiddleware.js';
+import userRoutes from './routes/users.js';
+
 dotenv.config();
 
 admin.initializeApp({
@@ -13,9 +16,16 @@ admin.initializeApp({
 });
 
 const app = express();
-const { verifyToken } = require('./middleware/authMiddleware');
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 app.use(express.json());
+
+// Routes
+app.use('/api/users', userRoutes);
 
 // Test route - protected
 app.get('/api/test', verifyToken, (req, res) => {
