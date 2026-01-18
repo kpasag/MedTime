@@ -1,20 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth } from '../../firebase.config';
-
-const getHoverStyle = (baseStyle) => ({
-  ...baseStyle,
-  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-});
-
-const handleMouseEnter = (e) => {
-  e.target.style.transform = 'scale(1.05)';
-  e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-};
-
-const handleMouseLeave = (e) => {
-  e.target.style.transform = 'scale(1)';
-  e.target.style.boxShadow = 'none';
-};
+import './Profile.css';
 
 function Profile() {
   const [userData, setUserData] = useState(null);
@@ -203,9 +189,9 @@ function Profile() {
 
   if (loading) {
     return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <p style={{ textAlign: 'center', color: 'rgba(0,0,0,0.6)' }}>Loading profile...</p>
+      <div className="profile-page">
+        <div className="profile-card">
+          <p className="profile-loading">Loading profile...</p>
         </div>
       </div>
     );
@@ -213,69 +199,67 @@ function Profile() {
 
   if (error) {
     return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <p style={{ color: '#d32f2f' }}>Error: {error}</p>
+      <div className="profile-page">
+        <div className="profile-card">
+          <p className="profile-error">Error: {error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.header}>
+    <div className="profile-page">
+      <div className="profile-card">
+        <div className="profile-header">
           <div>
-            <h2 style={styles.title}>Profile</h2>
-            <p style={styles.subtitle}>Your account information</p>
+            <h2 className="profile-title">Profile</h2>
+            <p className="profile-subtitle">Your account information</p>
           </div>
         </div>
 
-        <div style={styles.section}>
+        <div className="profile-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={styles.sectionTitle}>Basic Info</h3>
+            <h3 className="profile-section-title">Basic Info</h3>
             <button 
               onClick={() => setShowEditModal(true)} 
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              style={getHoverStyle(styles.btnSmall)}
+              className="profile-btn-small"
             >
               Edit
             </button>
           </div>
-          <div style={styles.row}>
-            <span style={styles.label}>Email</span>
-            <span style={styles.value}>{userData?.email || 'N/A'}</span>
+          <div className="profile-row">
+            <span className="profile-label">Email</span>
+            <span className="profile-value">{userData?.email || 'N/A'}</span>
           </div>
-          <div style={styles.row}>
-            <span style={styles.label}>Username</span>
-            <span style={styles.value}>{userData?.username || 'N/A'}</span>
+          <div className="profile-row">
+            <span className="profile-label">Username</span>
+            <span className="profile-value">{userData?.username || 'N/A'}</span>
           </div>
-          <div style={styles.row}>
-            <span style={styles.label}>Name</span>
-            <span style={styles.value}>
+          <div className="profile-row">
+            <span className="profile-label">Name</span>
+            <span className="profile-value">
               {userData?.firstName || userData?.lastName
                 ? `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim()
                 : 'Not set'}
             </span>
           </div>
-          <div style={styles.row}>
-            <span style={styles.label}>Date of Birth</span>
-            <span style={styles.value}>
+          <div className="profile-row">
+            <span className="profile-label">Date of Birth</span>
+            <span className="profile-value">
               {userData?.dateOfBirth ? new Date(userData.dateOfBirth).toLocaleDateString() : 'Not set'}
             </span>
           </div>
-          <div style={styles.row}>
-            <span style={styles.label}>Gender</span>
-            <span style={styles.value}>
+          <div className="profile-row">
+            <span className="profile-label">Gender</span>
+            <span className="profile-value">
               {userData?.gender
                 ? userData.gender.replace(/_/g, ' ').charAt(0).toUpperCase() + userData.gender.replace(/_/g, ' ').slice(1)
                 : 'Not set'}
             </span>
           </div>
-          <div style={styles.row}>
-            <span style={styles.label}>Member Since</span>
-            <span style={styles.value}>
+          <div className="profile-row">
+            <span className="profile-label">Member Since</span>
+            <span className="profile-value">
               {userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'N/A'}
             </span>
           </div>
@@ -283,10 +267,10 @@ function Profile() {
 
         {/* Pending Invitations Received */}
         {userData?.pendingInvitationsReceived && userData.pendingInvitationsReceived.length > 0 && (
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Pending Invitations</h3>
+          <div className="profile-section">
+            <h3 className="profile-section-title">Pending Invitations</h3>
             {userData.pendingInvitationsReceived.map((invitation, idx) => (
-              <div key={idx} style={styles.invitationBox}>
+              <div key={idx} className="invitation-box">
                 <div>
                   <p style={{ margin: '0 0 4px' }}>
                     <strong>{invitation.from.email}</strong> wants to be your {invitation.type}
@@ -295,20 +279,16 @@ function Profile() {
                     {new Date(invitation.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-                <div style={styles.invitationActions}>
+                <div className="invitation-actions">
                   <button
                     onClick={() => handleAcceptInvitation(invitation.from._id, invitation.type)}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    style={getHoverStyle({ ...styles.btn, ...styles.btnAccept })}
+                    className="profile-btn profile-btn-accept"
                   >
                     Accept
                   </button>
                   <button
                     onClick={() => handleRejectInvitation(invitation.from._id, invitation.type)}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    style={getHoverStyle({ ...styles.btn, ...styles.btnReject })}
+                    className="profile-btn profile-btn-reject"
                   >
                     Reject
                   </button>
@@ -319,17 +299,15 @@ function Profile() {
         )}
 
         {/* Linked Accounts */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Linked Accounts</h3>
+        <div className="profile-section">
+          <h3 className="profile-section-title">Linked Accounts</h3>
 
           <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <p style={styles.label}>Caregivers</p>
+              <p className="profile-label">Caregivers</p>
               <button
                 onClick={() => setShowAddCaregiverModal(true)}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle(styles.btnSmall)}
+                className="profile-btn-small"
               >
                 + Add Caregiver
               </button>
@@ -337,13 +315,11 @@ function Profile() {
             {userData?.linkedCaregivers && userData.linkedCaregivers.length > 0 ? (
               <ul style={{ margin: '6px 0', paddingLeft: '0', listStyle: 'none' }}>
                 {userData.linkedCaregivers.map((caregiver) => (
-                  <li key={caregiver._id} style={styles.relationshipItem}>
+                  <li key={caregiver._id} className="relationship-item">
                     <span>{caregiver.email}</span>
                     <button
                       onClick={() => handleRemoveRelationship(caregiver._id, 'caregiver')}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                      style={getHoverStyle(styles.btnRemove)}
+                      className="profile-btn profile-btn-remove"
                     >
                       Remove
                     </button>
@@ -351,18 +327,16 @@ function Profile() {
                 ))}
               </ul>
             ) : (
-              <div style={styles.muted}>No caregivers linked yet.</div>
+              <div className="profile-muted">No caregivers linked yet.</div>
             )}
           </div>
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <p style={styles.label}>Patients</p>
+              <p className="profile-label">Patients</p>
               <button
                 onClick={() => setShowAddPatientModal(true)}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle(styles.btnSmall)}
+                className="profile-btn-small"
               >
                 + Add Patient
               </button>
@@ -370,13 +344,11 @@ function Profile() {
             {userData?.linkedPatients && userData.linkedPatients.length > 0 ? (
               <ul style={{ margin: '6px 0', paddingLeft: '0', listStyle: 'none' }}>
                 {userData.linkedPatients.map((patient) => (
-                  <li key={patient._id} style={styles.relationshipItem}>
+                  <li key={patient._id} className="relationship-item">
                     <span>{patient.email}</span>
                     <button
                       onClick={() => handleRemoveRelationship(patient._id, 'patient')}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                      style={getHoverStyle(styles.btnRemove)}
+                      className="profile-btn profile-btn-remove"
                     >
                       Remove
                     </button>
@@ -384,7 +356,7 @@ function Profile() {
                 ))}
               </ul>
             ) : (
-              <div style={styles.muted}>No patients linked yet.</div>
+              <div className="profile-muted">No patients linked yet.</div>
             )}
           </div>
         </div>
@@ -392,31 +364,27 @@ function Profile() {
 
       {/* Add Caregiver Modal */}
       {showAddCaregiverModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
+        <div className="profile-modal">
+          <div className="profile-modal-content">
             <h3>Add Caregiver</h3>
             <input
               type="text"
               placeholder="Enter email or username"
               value={inviteInput}
               onChange={(e) => setInviteInput(e.target.value)}
-              style={styles.input}
+              className="profile-input"
             />
-            <div style={styles.modalButtons}>
+            <div className="profile-modal-buttons">
               <button
                 onClick={() => handleSendInvitation('caregiver')}
                 disabled={inviteLoading}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle({ ...styles.btn, ...styles.btnPrimary })}
+                className="profile-btn profile-btn-primary"
               >
                 {inviteLoading ? 'Sending...' : 'Send Invite'}
               </button>
               <button
                 onClick={() => setShowAddCaregiverModal(false)}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle({ ...styles.btn, ...styles.btnSecondary })}
+                className="profile-btn profile-btn-secondary"
               >
                 Cancel
               </button>
@@ -427,31 +395,27 @@ function Profile() {
 
       {/* Add Patient Modal */}
       {showAddPatientModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
+        <div className="profile-modal">
+          <div className="profile-modal-content">
             <h3>Add Patient</h3>
             <input
               type="text"
               placeholder="Enter email or username"
               value={inviteInput}
               onChange={(e) => setInviteInput(e.target.value)}
-              style={styles.input}
+              className="profile-input"
             />
-            <div style={styles.modalButtons}>
+            <div className="profile-modal-buttons">
               <button
                 onClick={() => handleSendInvitation('patient')}
                 disabled={inviteLoading}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle({ ...styles.btn, ...styles.btnPrimary })}
+                className="profile-btn profile-btn-primary"
               >
                 {inviteLoading ? 'Sending...' : 'Send Invite'}
               </button>
               <button
                 onClick={() => setShowAddPatientModal(false)}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle({ ...styles.btn, ...styles.btnSecondary })}
+                className="profile-btn profile-btn-secondary"
               >
                 Cancel
               </button>
@@ -462,44 +426,44 @@ function Profile() {
 
       {/* Edit Profile Modal */}
       {showEditModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
+        <div className="profile-modal">
+          <div className="profile-modal-content">
             <h3>Edit Profile</h3>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: 'rgba(0,0,0,0.6)' }}>First Name</label>
+              <label>First Name</label>
               <input
                 type="text"
                 value={editData.firstName}
                 onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
-                style={styles.input}
+                className="profile-input"
                 placeholder="First name"
               />
             </div>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: 'rgba(0,0,0,0.6)' }}>Last Name</label>
+              <label>Last Name</label>
               <input
                 type="text"
                 value={editData.lastName}
                 onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
-                style={styles.input}
+                className="profile-input"
                 placeholder="Last name"
               />
             </div>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: 'rgba(0,0,0,0.6)' }}>Date of Birth</label>
+              <label>Date of Birth</label>
               <input
                 type="date"
                 value={editData.dateOfBirth}
                 onChange={(e) => setEditData({ ...editData, dateOfBirth: e.target.value })}
-                style={styles.input}
+                className="profile-input"
               />
             </div>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: 'rgba(0,0,0,0.6)' }}>Gender</label>
+              <label>Gender</label>
               <select
                 value={editData.gender}
                 onChange={(e) => setEditData({ ...editData, gender: e.target.value })}
-                style={styles.input}
+                className="profile-input"
               >
                 <option value="">Select...</option>
                 <option value="male">Male</option>
@@ -508,20 +472,16 @@ function Profile() {
                 <option value="prefer_not_to_say">Prefer not to say</option>
               </select>
             </div>
-            <div style={styles.modalButtons}>
+            <div className="profile-modal-buttons">
               <button
                 onClick={handleUpdateProfile}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle({ ...styles.btn, ...styles.btnPrimary })}
+                className="profile-btn profile-btn-primary"
               >
                 Save Changes
               </button>
               <button
                 onClick={() => setShowEditModal(false)}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={getHoverStyle({ ...styles.btn, ...styles.btnSecondary })}
+                className="profile-btn profile-btn-secondary"
               >
                 Cancel
               </button>
@@ -532,154 +492,5 @@ function Profile() {
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    padding: "24px",
-    display: "flex",
-    justifyContent: "center",
-    background: "#f6f8fb",
-  },
-  card: {
-    width: "100%",
-    maxWidth: "780px",
-    background: "white",
-    borderRadius: "14px",
-    padding: "20px",
-    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-    border: "1px solid rgba(0,0,0,0.06)",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    marginBottom: "10px",
-  },
-  title: { margin: 0, fontSize: "28px" },
-  subtitle: { margin: "6px 0 0", color: "rgba(0,0,0,0.6)" },
-
-  section: {
-    marginTop: "18px",
-    paddingTop: "14px",
-    borderTop: "1px solid rgba(0,0,0,0.08)",
-  },
-  sectionTitle: { margin: "0 0 10px", fontSize: "18px" },
-
-  row: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-    padding: "10px 0",
-    borderBottom: "1px solid rgba(0,0,0,0.06)",
-  },
-  label: { color: "rgba(0,0,0,0.6)", margin: 0 },
-  value: { fontWeight: 600 },
-  muted: { color: "rgba(0,0,0,0.6)", padding: "6px 0" },
-
-  relationshipItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "8px 12px",
-    backgroundColor: "rgba(0,0,0,0.02)",
-    borderRadius: "6px",
-    marginBottom: "6px",
-  },
-
-  invitationBox: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "12px",
-    backgroundColor: "#e3f2fd",
-    border: "1px solid #90caf9",
-    borderRadius: "6px",
-    marginBottom: "8px",
-  },
-
-  invitationActions: {
-    display: "flex",
-    gap: "8px",
-  },
-
-  btn: {
-    padding: "6px 12px",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "500",
-  },
-  btnSmall: {
-    padding: "6px 12px",
-    border: "1px solid #2196f3",
-    borderRadius: "6px",
-    backgroundColor: "#2196f3",
-    color: "white",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: "500",
-  },
-  btnAccept: {
-    backgroundColor: "#4caf50",
-    color: "white",
-  },
-  btnReject: {
-    backgroundColor: "#f44336",
-    color: "white",
-  },
-  btnRemove: {
-    backgroundColor: "#ff9800",
-    color: "white",
-    padding: "4px 8px",
-    fontSize: "12px",
-  },
-  btnPrimary: {
-    backgroundColor: "#2196f3",
-    color: "white",
-  },
-  btnSecondary: {
-    backgroundColor: "#e0e0e0",
-    color: "rgba(0,0,0,0.7)",
-  },
-
-  input: {
-    width: "100%",
-    padding: "10px",
-    border: "1px solid #ddd",
-    borderRadius: "6px",
-    marginBottom: "12px",
-    fontSize: "14px",
-    boxSizing: "border-box",
-  },
-
-  modal: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1000,
-  },
-
-  modalContent: {
-    backgroundColor: "white",
-    padding: "24px",
-    borderRadius: "10px",
-    minWidth: "300px",
-  },
-
-  modalButtons: {
-    display: "flex",
-    gap: "8px",
-    marginTop: "16px",
-  },
-};
 
 export default Profile;

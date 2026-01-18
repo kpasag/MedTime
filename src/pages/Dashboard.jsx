@@ -698,7 +698,13 @@ function Dashboard() {
                     </h2>
 
                     <div className="pill-cards-container">
-                        {currentPills.map(({ id, name, medicine, time, status }) => (
+                        {currentPills.map(({ id, name, medicine, time, status, intervalDays }) => {
+                            // Extract medicine name and dosage
+                            const medicineMatch = medicine.match(/^(.+?)\s*\((.+?)\)$/);
+                            const medicineName = medicineMatch ? medicineMatch[1] : medicine;
+                            const dosage = medicineMatch ? medicineMatch[2] : '';
+                            
+                            return (
                             <div 
                                 key={id} 
                                 className={`pill-card ${status} clickable`}
@@ -714,7 +720,18 @@ function Dashboard() {
                                             {status === "pending" && "Pending"}
                                             {status === "upcoming" && "Upcoming"}
                                         </span>
-                                        <span className="medicine-name">{medicine}</span>
+                                        <div className="medicine-info">
+                                            <span 
+                                                className="medicine-name"
+                                                style={{
+                                                    fontSize: medicineName.length > 20 ? '0.85rem' : 
+                                                             medicineName.length > 15 ? '0.95rem' : '1.15rem'
+                                                }}
+                                            >
+                                                {medicineName}
+                                            </span>
+                                            {dosage && <span className="medicine-dosage">{dosage}</span>}
+                                        </div>
                                     </div>
                                     <div className="pill-menu-wrapper">
                                         <button
@@ -781,9 +798,18 @@ function Dashboard() {
                                 <div className="pill-details">
                                     <div className="person-name">{name}</div>
                                     <div className="pill-time">{time}</div>
+                                    {intervalDays && (
+                                        <div className="pill-frequency">
+                                            {intervalDays === 1 ? 'Daily' : 
+                                             intervalDays === 7 ? 'Weekly' : 
+                                             intervalDays === 30 ? 'Monthly' : 
+                                             `Every ${intervalDays} days`}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
 
                         <button
                             type="button"
@@ -798,12 +824,18 @@ function Dashboard() {
 
                 <section className="notifications-section">
                     <h2>Notifications</h2>
-                    {notifications.map(({ id, message, date }) => (
-                        <div key={id} className="notification-item">
-                            <div>{message}</div>
-                            <small>{date}</small>
+                    {notifications.length === 0 ? (
+                        <div className="notification-placeholder">
+                            No new notifications
                         </div>
-                    ))}
+                    ) : (
+                        notifications.map(({ id, message, date }) => (
+                            <div key={id} className="notification-item">
+                                <div>{message}</div>
+                                <small>{date}</small>
+                            </div>
+                        ))
+                    )}
                 </section>
             </main>
 
