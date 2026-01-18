@@ -61,7 +61,7 @@ function Homepage() {
       height: pill.offsetHeight || 48,
     }));
     const cursor = { x: 0, y: 0, active: false };
-    const repelRadius = 0;
+    const repelRadius = 50;
     const friction = 0.94;
     const spring = 0;
     const maxSpeed = 28;
@@ -118,9 +118,8 @@ function Homepage() {
           const dx = centerX - cursor.x;
           const dy = centerY - cursor.y;
           const distance = Math.hypot(dx, dy);
-          const hitRadius = Math.min(state.width, state.height) / 2;
-          if (distance < hitRadius) {
-            const force = (hitRadius - distance) / (hitRadius || 1);
+          if (distance < repelRadius) {
+            const force = (repelRadius - distance) / repelRadius;
             const nx = dx / (distance || 1);
             const ny = dy / (distance || 1);
             state.vx += nx * force * 7 * delta;
