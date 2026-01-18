@@ -16,9 +16,16 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
 
+    const { username, firstName, lastName, dateOfBirth, gender } = req.body;
+
     const user = new User({
       uid: req.user.uid,
-      email: req.user.email
+      email: req.user.email,
+      username,
+      firstName,
+      lastName,
+      dateOfBirth,
+      gender
     });
 
     await user.save();
@@ -30,13 +37,15 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
-// Get current user
+// Get current user with populated invitations
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findOne({ uid: req.user.uid })
+      .populate('linkedCaregivers', 'email username firstName lastName')
+      .populate('linkedPatients', 'email username firstName lastName')
       .populate('pillReminders')
-      .populate('linkedPatients', 'email')
-      .populate('linkedCaregivers', 'email');
+      .populate('pendingInvitationsSent.to', 'email username firstName lastName')
+      .populate('pendingInvitationsReceived.from', 'email username firstName lastName');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -44,6 +53,206 @@ router.get('/me', verifyToken, async (req, res) => {
 
     res.json(user);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Send invitation to caregiver or patient
+router.post('/send-invitation', verifyToken, async (req, res) => {
+  try {
+    const { emailOrUsername, relationshipType } = req.body;
+    
+    if (!['caregiver', 'patient'].includes(relationshipType)) {
+      return res.status(400).json({ error: 'Invalid relationship type' });
+    }
+
+    const sender = await User.findOne({ uid: req.user.uid });
+    const recipient = await User.findOne({
+      $or: [
+        { email: emailOrUsername.toLowerCase() },
+        { username: emailOrUsername }
+      ]
+    });
+
+    if (!recipient) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (sender._id.equals(recipient._id)) {
+      return res.status(400).json({ error: 'Cannot send invitation to yourself' });
+    }
+
+    // Check if already linked
+    if (relationshipType === 'caregiver' && sender.linkedCaregivers.some(id => id.toString() === recipient._id.toString())) {
+      return res.status(400).json({ error: 'User is already your caregiver' });
+    }
+    if (relationshipType === 'patient' && sender.linkedPatients.some(id => id.toString() === recipient._id.toString())) {
+      return res.status(400).json({ error: 'User is already your patient' });
+    }
+
+    // Check if invitation already exists
+    const existingInvitation = sender.pendingInvitationsSent.some(
+      inv => inv.to.toString() === recipient._id.toString() && inv.type === relationshipType
+    );
+    if (existingInvitation) {
+      return res.status(400).json({ error: 'Invitation already sent' });
+    }
+
+    // Send invitation
+    await User.updateOne(
+      { _id: sender._id },
+      { $push: { pendingInvitationsSent: { to: recipient._id, type: relationshipType } } }
+    );
+
+    await User.updateOne(
+      { _id: recipient._id },
+      { $push: { pendingInvitationsReceived: { from: sender._id, type: relationshipType } } }
+    );
+
+    res.json({ message: 'Invitation sent successfully' });
+  } catch (error) {
+    console.error('Error sending invitation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Accept invitation
+router.post('/accept-invitation', verifyToken, async (req, res) => {
+  try {
+    const { fromUserId, relationshipType } = req.body;
+    
+    if (!['caregiver', 'patient'].includes(relationshipType)) {
+      return res.status(400).json({ error: 'Invalid relationship type' });
+    }
+
+    const currentUser = await User.findOne({ uid: req.user.uid });
+    const invitingUser = await User.findById(fromUserId);
+
+    if (!invitingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove from pending invitations
+    await User.updateOne(
+      { _id: currentUser._id },
+      { $pull: { pendingInvitationsReceived: { from: invitingUser._id, type: relationshipType } } }
+    );
+
+    await User.updateOne(
+      { _id: invitingUser._id },
+      { $pull: { pendingInvitationsSent: { to: currentUser._id, type: relationshipType } } }
+    );
+
+    // Add to linked users
+    if (relationshipType === 'caregiver') {
+      // Current user accepts inviting user as caregiver
+      await User.updateOne(
+        { _id: currentUser._id },
+        { $addToSet: { linkedCaregivers: invitingUser._id } }
+      );
+      await User.updateOne(
+        { _id: invitingUser._id },
+        { $addToSet: { linkedPatients: currentUser._id } }
+      );
+    } else {
+      // Current user accepts inviting user as patient
+      await User.updateOne(
+        { _id: currentUser._id },
+        { $addToSet: { linkedPatients: invitingUser._id } }
+      );
+      await User.updateOne(
+        { _id: invitingUser._id },
+        { $addToSet: { linkedCaregivers: currentUser._id } }
+      );
+    }
+
+    res.json({ message: 'Invitation accepted' });
+  } catch (error) {
+    console.error('Error accepting invitation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reject invitation
+router.post('/reject-invitation', verifyToken, async (req, res) => {
+  try {
+    const { fromUserId, relationshipType } = req.body;
+
+    const currentUser = await User.findOne({ uid: req.user.uid });
+
+    await User.updateOne(
+      { _id: currentUser._id },
+      { $pull: { pendingInvitationsReceived: { from: fromUserId, type: relationshipType } } }
+    );
+
+    await User.updateOne(
+      { _id: fromUserId },
+      { $pull: { pendingInvitationsSent: { to: currentUser._id, type: relationshipType } } }
+    );
+
+    res.json({ message: 'Invitation rejected' });
+  } catch (error) {
+    console.error('Error rejecting invitation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user profile (firstName, lastName, dateOfBirth, gender)
+router.put('/update-profile', verifyToken, async (req, res) => {
+  try {
+    const { firstName, lastName, dateOfBirth, gender } = req.body;
+    
+    const user = await User.findOneAndUpdate(
+      { uid: req.user.uid },
+      { firstName, lastName, dateOfBirth, gender },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Remove caregiver or patient
+router.post('/remove-relationship', verifyToken, async (req, res) => {
+  try {
+    const { userId, relationshipType } = req.body;
+
+    if (!['caregiver', 'patient'].includes(relationshipType)) {
+      return res.status(400).json({ error: 'Invalid relationship type' });
+    }
+
+    const currentUser = await User.findOne({ uid: req.user.uid });
+
+    if (relationshipType === 'caregiver') {
+      await User.updateOne(
+        { _id: currentUser._id },
+        { $pull: { linkedCaregivers: userId } }
+      );
+      await User.updateOne(
+        { _id: userId },
+        { $pull: { linkedPatients: currentUser._id } }
+      );
+    } else {
+      await User.updateOne(
+        { _id: currentUser._id },
+        { $pull: { linkedPatients: userId } }
+      );
+      await User.updateOne(
+        { _id: userId },
+        { $pull: { linkedCaregivers: currentUser._id } }
+      );
+    }
+
+    res.json({ message: 'Relationship removed' });
+  } catch (error) {
+    console.error('Error removing relationship:', error);
     res.status(500).json({ error: error.message });
   }
 });
