@@ -1,27 +1,23 @@
 import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema({
+const pillreminderSchema = new mongoose.Schema({
   uid: {
     type: String,
     required: true,
     unique: true
   },
-  email: {
+  name: {
     type: String,
     required: true
   },
-  pillReminders: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'PillReminder'
+  timesPerDay: [{
+    type: String,
+    required: true
   }],
-  linkedPatients: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  linkedCaregivers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
+  frequencyInDays: {
+    type: Number,
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
