@@ -17,11 +17,11 @@ function Header() {
         <Link to="/dashboard" className="link">
           Dashboard
         </Link>
-        <Link to="/login" className="link">
-          Login
-        </Link>
         <Link to="/profile" className="link">
           Profile
+        </Link>
+        <Link to="/login" className="link">
+          Login
         </Link>
       </nav>
     </header >
