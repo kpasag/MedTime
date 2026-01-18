@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useEffect } from "react";
+import { auth } from '../../firebase.config'
+import { signOut } from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -117,9 +120,43 @@ function Dashboard() {
         <div className="dashboard-page">
             <header className="dashboard-header">
                 <h1>Dashboard</h1>
+                <div className="header-actions">
+                    <span>{user?.email}</span>
+                    <button onClick={handleLogout} className="logout-btn">Logout</button>
+                </div>
             </header>
 
             <main className="dashboard-content">
+                {/* Links Section */}
+                <section className="links-section">
+                    <div className="link-buttons">
+                        <button onClick={() => { setLinkType('caregiver'); setShowLinkModal(true); setError(''); setLinkEmail(''); }}>
+                            + Add Caregiver
+                        </button>
+                        <button onClick={() => { setLinkType('patient'); setShowLinkModal(true); setError(''); setLinkEmail(''); }}>
+                            + Add Patient
+                        </button>
+                    </div>
+
+                    {userData?.linkedCaregivers?.length > 0 && (
+                        <div className="linked-users">
+                            <h3>My Caregivers</h3>
+                            {userData.linkedCaregivers.map(cg => (
+                                <div key={cg._id} className="linked-user-item">{cg.email}</div>
+                            ))}
+                        </div>
+                    )}
+
+                    {userData?.linkedPatients?.length > 0 && (
+                        <div className="linked-users">
+                            <h3>My Patients</h3>
+                            {userData.linkedPatients.map(p => (
+                                <div key={p._id} className="linked-user-item">{p.email}</div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
                 <section className="current-pills-section">
                     <h2>
                         Current Pills <span style={{ fontWeight: 500, fontSize: "0.95rem" }}>({totalPills} total)</span>
@@ -172,6 +209,30 @@ function Dashboard() {
                     ))}
                 </section>
             </main>
+
+            {/* Link Modal */}
+            {showLinkModal && (
+                <div className="modal-overlay" onClick={() => setShowLinkModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <h3>Add {linkType === 'caregiver' ? 'Caregiver' : 'Patient'}</h3>
+                        <p className="modal-hint">Enter their email to link</p>
+
+                        <div className="search-box">
+                            <input
+                                type="email"
+                                placeholder="Enter email..."
+                                value={linkEmail}
+                                onChange={(e) => setLinkEmail(e.target.value.toLowerCase())}
+                            />
+                            <button onClick={handleLink}>Link</button>
+                        </div>
+
+                        {error && <p className="error-message">{error}</p>}
+
+                        <button className="close-btn" onClick={() => setShowLinkModal(false)}>Close</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
