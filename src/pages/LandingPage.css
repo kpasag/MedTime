@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=PT+Sans+Caption:wght@400;700&family=Pixelify+Sans:wght@400..700&display=swap');
+
 .landing-page {
   min-height: 100vh;
   background-color: #fff;
@@ -174,4 +176,8 @@
   .section-title {
     font-size: 1.6rem;
   }
+}
+
+* {
+  font-family: 'PT Sans Caption', sans-serif;
 }

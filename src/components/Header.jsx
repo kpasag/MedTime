@@ -4,11 +4,11 @@ import { Link } from "react-router-dom";
 function Header() {
   return (
     <header className="header">
-      <h1 className="title">
-        <Link to="/" className="link">
+      <Link to="/" className="link">
+        <h1 className="title">
           MedTime
-        </Link>
-      </h1>
+        </h1>
+      </Link>
 
       <nav className="nav">
         <Link to="/" className="link">
@@ -21,7 +21,7 @@ function Header() {
           Login
         </Link>
       </nav>
-    </header>
+    </header >
   );
 }
 
