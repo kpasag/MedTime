@@ -5,13 +5,13 @@
 # Table of Contents
 
 - [About](#about)
- - [Features](#getting-started)
+  - [Features](#getting-started)
 - [Getting Started](#getting-started)
- - [Caregivers](#caregivers)
+  - [Caregivers](#caregivers)
 - [What We Used](#what-we-used)
 - [Development](#development)
- - [Challenges](#challenges)
- - [Future Plans](#future-plans)
+  - [Challenges](#challenges)
+  - [Future Plans](#future-plans)
 
 # About
 
