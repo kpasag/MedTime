@@ -264,7 +264,7 @@ function Homepage() {
             <button className="btn btn-primary" onClick={() => navigate('/login')}>
               Get Started
             </button>
-            <button className="btn btn-secondary" onClick={() => navigate('/login')}>
+            <button className="btn btn-secondary" onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}>
               Learn More
             </button>
           </div>
@@ -314,7 +314,7 @@ function Homepage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="how-it-works">
+      <section id="how-it-works" className="how-it-works">
         <h2 className="section-title">How It Works</h2>
         <div className="steps">
           <div className="step scroll-animate scroll-animate-left">
