@@ -1,6 +1,7 @@
 import express from 'express';
 import User from '../models/User.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
+import PillReminder from '../models/PillReminder.js';
 
 const router = express.Router();
 
@@ -31,14 +32,35 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findOne({ uid: req.user.uid })
-      .populate('linkedPatients', 'email')
-      .populate('linkedCaregivers', 'email');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add reminder
+router.put('/add-reminder', verifyToken, async (req, res) => {
+  try {
+    const reminder = new PillReminder({
+      name: req.body.name,
+      timesPerDay: req.body.timesPerDay,
+      frequencyInDays: req.body.frequencyInDays
+    });
+    const user = await User.updateOne(
+      { uid: req.user.uid },
+      { $push: { pillReminders: reminder } }
+    )
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(reminder);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

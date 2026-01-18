@@ -10,11 +10,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  role: {
-    type: String,
-    enum: ['patient', 'caregiver'],
-    required: true
-  },
+  pillReminders: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PillReminder'
+  }],
   linkedPatients: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
