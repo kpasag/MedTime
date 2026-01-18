@@ -284,7 +284,7 @@ function Profile() {
         {/* Pending Invitations Received */}
         {userData?.pendingInvitationsReceived && userData.pendingInvitationsReceived.length > 0 && (
           <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Pending Invitations 📬</h3>
+            <h3 style={styles.sectionTitle}>Pending Invitations</h3>
             {userData.pendingInvitationsReceived.map((invitation, idx) => (
               <div key={idx} style={styles.invitationBox}>
                 <div>
