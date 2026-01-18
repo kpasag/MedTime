@@ -7,6 +7,7 @@ import Homepage from './pages/Homepage'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
+import PDashboard from './pages/PDashboard'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
         } />
+        <Route path="/pdashboard" element={<PDashboard />} />
       </Routes >
       <Footer />
     </BrowserRouter >

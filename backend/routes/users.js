@@ -74,11 +74,36 @@ router.get('/reminders', verifyToken, async (req, res) => {
   }
 });
 
+// Get all pill reminders for the current user
+router.post('/patient-reminders', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const patient = await User.findOne({ uid: req.body.uid })
+      .populate("pillReminders");
+    console.log(req.body);
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+
+    res.json(patient.pillReminders || []);
+  } catch (error) {
+    console.error('Error fetching reminders:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Send invitation to caregiver or patient
 router.post('/send-invitation', verifyToken, async (req, res) => {
   try {
     const { emailOrUsername, relationshipType } = req.body;
-    
+
     if (!['caregiver', 'patient'].includes(relationshipType)) {
       return res.status(400).json({ error: 'Invalid relationship type' });
     }
@@ -137,7 +162,7 @@ router.post('/send-invitation', verifyToken, async (req, res) => {
 router.post('/accept-invitation', verifyToken, async (req, res) => {
   try {
     const { fromUserId, relationshipType } = req.body;
-    
+
     if (!['caregiver', 'patient'].includes(relationshipType)) {
       return res.status(400).json({ error: 'Invalid relationship type' });
     }
@@ -218,7 +243,7 @@ router.post('/reject-invitation', verifyToken, async (req, res) => {
 router.put('/update-profile', verifyToken, async (req, res) => {
   try {
     const { firstName, lastName, dateOfBirth, gender } = req.body;
-    
+
     const user = await User.findOneAndUpdate(
       { uid: req.user.uid },
       { firstName, lastName, dateOfBirth, gender },
@@ -445,8 +470,8 @@ router.post('/mark-taken/:reminderId', verifyToken, async (req, res) => {
 
     // Find if this time already has a record for today
     const existingIndex = reminder.lastTaken.findIndex(
-      lt => lt.time === time && 
-      new Date(lt.scheduledFor).toDateString() === new Date(scheduledFor).toDateString()
+      lt => lt.time === time &&
+        new Date(lt.scheduledFor).toDateString() === new Date(scheduledFor).toDateString()
     );
 
     const takenRecord = {
@@ -485,8 +510,8 @@ router.post('/unmark-taken/:reminderId', verifyToken, async (req, res) => {
     // Remove the taken record for this specific time/date
     if (reminder.lastTaken) {
       reminder.lastTaken = reminder.lastTaken.filter(
-        lt => !(lt.time === time && 
-        new Date(lt.scheduledFor).toDateString() === new Date(scheduledFor).toDateString())
+        lt => !(lt.time === time &&
+          new Date(lt.scheduledFor).toDateString() === new Date(scheduledFor).toDateString())
       );
     }
 
