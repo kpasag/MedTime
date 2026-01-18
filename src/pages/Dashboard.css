@@ -98,7 +98,7 @@
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(8px);
     border-radius: 10px;
-    width: 150px;
+    width: 220px;
     height: 180px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
     padding: 16px;
@@ -111,6 +111,7 @@
     font-weight: 500;
     color: #2c3e50;
     transition: transform 0.2s ease, box-shadow 0.25s ease;
+    overflow: hidden;
 }
 
 .pill-card:hover {
@@ -145,6 +146,8 @@
     flex-direction: column;
     gap: 8px;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .status-badge {
@@ -177,6 +180,11 @@
     font-weight: 700;
     font-size: 1.1rem;
     color: #2c3e50;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+    hyphens: auto;
 }
 
 .pill-menu-wrapper {

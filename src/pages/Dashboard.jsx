@@ -406,6 +406,12 @@ function Dashboard() {
         }
     };
 
+    const handleMarkAsTaken = (pillId) => {
+        setCurrentPills(prev => prev.map(pill => 
+            pill.id === pillId ? { ...pill, status: 'taken' } : pill
+        ));
+    };
+
     const handleDeletePill = async (pillId) => {
         if (!window.confirm('Are you sure you want to delete this medication?')) {
             return;
@@ -490,7 +496,15 @@ function Dashboard() {
 
                     <div className="pill-cards-container">
                         {currentPills.map(({ id, name, medicine, time, status }) => (
-                            <div key={id} className="pill-card">
+                            <div 
+                                key={id} 
+                                className={`pill-card ${status === 'pending' ? 'clickable' : ''}`}
+                                onClick={() => {
+                                    if (status === 'pending') {
+                                        handleMarkAsTaken(id);
+                                    }
+                                }}
+                            >
                                 <div className="pill-header">
                                     <div className="pill-header-left">
                                         <span className={`status-badge ${status}`}>
@@ -503,16 +517,32 @@ function Dashboard() {
                                     <div className="pill-menu-wrapper">
                                         <button
                                             className="pill-menu-btn"
-                                            onClick={() => setOpenMenuId(openMenuId === id ? null : id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenMenuId(openMenuId === id ? null : id);
+                                            }}
                                             title="Options"
                                         >
                                             ⋮
                                         </button>
                                         {openMenuId === id && (
                                             <div className="pill-dropdown-menu">
+                                                {status === 'pending' && (
+                                                    <button
+                                                        className="dropdown-item"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(null);
+                                                            handleMarkAsTaken(id);
+                                                        }}
+                                                    >
+                                                        Mark as Taken
+                                                    </button>
+                                                )}
                                                 <button
                                                     className="dropdown-item"
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         setOpenMenuId(null);
                                                         handleEditPill(id);
                                                     }}
@@ -521,7 +551,8 @@ function Dashboard() {
                                                 </button>
                                                 <button
                                                     className="dropdown-item delete"
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         setOpenMenuId(null);
                                                         handleDeletePill(id);
                                                     }}
@@ -704,20 +735,21 @@ function Dashboard() {
 
                             <label className="modal-label">
                                 Repeat
-                                <div className="repeat-row">
-                                    <span>Once every</span>
-                                    <input
-                                        className="modal-input repeat-days"
-                                        name="intervalDays"
-                                        value={pillForm.intervalDays}
-                                        onChange={handleChange}
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        required
-                                    />
-                                    <span>day(s)</span>
-                                </div>
+                                <select
+                                    className="modal-input"
+                                    name="intervalDays"
+                                    value={pillForm.intervalDays}
+                                    onChange={handleChange}
+                                    required
+                                >
+                                    <option value="1">Daily</option>
+                                    <option value="2">Every Other Day</option>
+                                    <option value="7">Weekly</option>
+                                    <option value="30">Monthly</option>
+                                    {Array.from({ length: 28 }, (_, i) => i + 3).filter(d => d !== 7 && d !== 30).map(days => (
+                                        <option key={days} value={days}>Every {days} Days</option>
+                                    ))}
+                                </select>
                             </label>
 
                             <div className="modal-actions">
