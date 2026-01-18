@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { auth } from "../../firebase.config";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -287,6 +288,23 @@ function Dashboard() {
     const frequencyText = (days) => {
         if (days === 1) return "daily";
         return `every ${days} days`;
+    };
+
+    const updateDatabasePills = async (pillReminder) => {
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) {
+            console.error('No auth token available');
+            return;
+        }
+
+        await fetch('http://localhost:3000/api/users', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(pillReminder)
+        });
     };
 
     const handleSubmit = (e) => {
