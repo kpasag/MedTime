@@ -26,6 +26,7 @@ function Dashboard() {
   ];
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   const [pillForm, setPillForm] = useState({
     pillName: "",
     dosage: "",
@@ -51,8 +52,6 @@ function Dashboard() {
   const cacheRef = useRef(new Map()); // key: query -> raw normalized list
 
   const totalPills = currentPills.length;
-
-  const openAddModal = () => setIsAddModalOpen(true);
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
@@ -262,99 +261,83 @@ function Dashboard() {
       next[index] = value;
       return { ...prev, takeTimes: next };
     });
+  };
 
-    const totalPills = currentPills.length;
-    const bufferMinutes = 5; // clickable window
-    const missedAfterMinutes = 15; // mark as late after 15 minutes
+  const addTimeField = () => {
+    setPillForm((prev) => ({ ...prev, takeTimes: [...prev.takeTimes, ""] }));
+  };
 
-    const openAddModal = () => setIsAddModalOpen(true);
-    const closeAddModal = () => {
-        setIsAddModalOpen(false);
-        setPillForm({ pillName: "", dosage: "", takeTimes: [""], intervalDays: 1 });
+  const removeTimeField = (index) => {
+    setPillForm((prev) => {
+      const next = prev.takeTimes.filter((_, i) => i !== index);
+      return { ...prev, takeTimes: next.length ? next : [""] };
+    });
+  };
+
+  const formatTime = (value) => {
+    if (!value) return "";
+    const d = new Date(`1970-01-01T${value}:00`);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const frequencyText = (days) => {
+    if (days === 1) return "daily";
+    return `every ${days} days`;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const pillName = pillForm.pillName.trim();
+    const dosage = pillForm.dosage.trim();
+    const intervalDays = pillForm.intervalDays;
+
+    const cleanedTimes = pillForm.takeTimes
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    if (
+      !pillName ||
+      !dosage ||
+      !intervalDays ||
+      intervalDays < 1 ||
+      cleanedTimes.length === 0
+    )
+      return;
+
+    const timesLabel = cleanedTimes.map(formatTime).join(", ");
+    const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
+
+    const newPill = {
+      id: Date.now(),
+      name: "New Person",
+      medicine: `${pillName} (${dosage})`,
+      time: timeLabel,
+      status: "pending",
     };
 
-    useEffect(() => {
-        if (!isAddModalOpen) return;
-        const onKeyDown = (e) => {
-            if (e.key === "Escape") closeAddModal();
-        };
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, [isAddModalOpen]);
+    setCurrentPills((prev) => [...prev, newPill]);
+    closeAddModal();
+  };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setPillForm((prev) => ({
-            ...prev,
-            [name]: name === "intervalDays" ? Number(value) : value,
-        }));
-    };
+  return (
+    <div className="dashboard-page">
+      <header className="dashboard-header">
+        <h1>Dashboard</h1>
+      </header>
 
-    const updateTimeAtIndex = (index, value) => {
-        setPillForm((prev) => {
-            const next = [...prev.takeTimes];
-            next[index] = value;
-            return { ...prev, takeTimes: next };
-        });
-    };
-
-    const addTimeField = () => {
-        setPillForm((prev) => ({ ...prev, takeTimes: [...prev.takeTimes, ""] }));
-    };
-
-    const removeTimeField = (index) => {
-        setPillForm((prev) => {
-            const next = prev.takeTimes.filter((_, i) => i !== index);
-            return { ...prev, takeTimes: next.length ? next : [""] };
-        });
-    };
-
-    const formatTime = (value) => {
-        if (!value) return "";
-        const d = new Date(`1970-01-01T${value}:00`);
-        if (Number.isNaN(d.getTime())) return value;
-        return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-    };
-
-    const frequencyText = (days) => (days === 1 ? "daily" : `every ${days} days`);
-
-    const canTakeNow = (rawTimes) => {
-        if (!rawTimes || rawTimes.length === 0) return false;
-        const now = new Date();
-        const nowMinutes = now.getHours() * 60 + now.getMinutes();
-        return rawTimes.some((timeStr) => {
-            const [h, m] = timeStr.split(":").map(Number);
-            const pillMinutes = h * 60 + m;
-            return Math.abs(nowMinutes - pillMinutes) <= bufferMinutes;
-        });
-    };
-
-    const isLate = (rawTimes) => {
-        if (!rawTimes || rawTimes.length === 0) return false;
-        const now = new Date();
-        return rawTimes.some((timeStr) => {
-            const [h, m] = timeStr.split(":").map(Number);
-            const pillTime = new Date();
-            pillTime.setHours(h, m, 0, 0);
-            return now - pillTime > missedAfterMinutes * 60 * 1000;
-        });
-    };
-
-    const lateMinutes = (rawTimes) => {
-        const now = new Date();
-        let maxLate = 0;
-        rawTimes.forEach((timeStr) => {
-            const [h, m] = timeStr.split(":").map(Number);
-            const pillTime = new Date();
-            pillTime.setHours(h, m, 0, 0);
-            const diff = Math.floor((now - pillTime) / 60000);
-            if (diff > maxLate) maxLate = diff;
-        });
-        return maxLate;
-    };
-
-    const takePill = (id, medicine, rawTimes) => {
-        setCurrentPills((prev) => prev.filter((pill) => pill.id !== id));
+      <main className="dashboard-content">
+        <section className="current-pills-section">
+          <h2>
+            Current Pills{" "}
+            <span style={{ fontWeight: 500, fontSize: "0.95rem" }}>
+              ({totalPills} total)
+            </span>
+          </h2>
 
           <div className="pill-cards-container">
             {currentPills.map(({ id, name, medicine, time, status }) => (
@@ -368,13 +351,9 @@ function Dashboard() {
                   </span>
                 </div>
 
-    return (
-        <div className="dashboard-page">
-            <header className="dashboard-header">
-                <h1>Dashboard</h1>
-                <div className="header-actions">
-                    <span>{user?.email}</span>
-                    <button onClick={handleLogout} className="logout-btn">Logout</button>
+                <div className="pill-details">
+                  <div className="person-name">{name}</div>
+                  <div className="pill-time">{time}</div>
                 </div>
               </div>
             ))}
@@ -382,7 +361,7 @@ function Dashboard() {
             <button
               type="button"
               className="pill-card add-card"
-              onClick={openAddModal}
+              onClick={() => setIsAddModalOpen(true)}
             >
               <span className="plus-sign">+</span>
               <div>Add Pill</div>
@@ -543,104 +522,53 @@ function Dashboard() {
                         x
                       </button>
                     </div>
-
-                    {userData?.linkedCaregivers?.length > 0 && (
-                        <div className="linked-users">
-                            <h3>My Caregivers</h3>
-                            {userData.linkedCaregivers.map(cg => (
-                                <div key={cg._id} className="linked-user-item">{cg.email}</div>
-                            ))}
-                        </div>
-                    )}
-
-                    {userData?.linkedPatients?.length > 0 && (
-                        <div className="linked-users">
-                            <h3>My Patients</h3>
-                            {userData.linkedPatients.map(p => (
-                                <div key={p._id} className="linked-user-item">{p.email}</div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                <section className="current-pills-section">
-                    <h2>
-                        Current Pills <span style={{ fontWeight: 500, fontSize: "0.95rem" }}>({totalPills} total)</span>
-                    </h2>
-
-                    <div className="pill-cards-container">
-                        {currentPills.map(({ id, name, medicine, time, rawTimes, status }) => {
-                            const clickable = true; // always clickable
-                            const late = isLate(rawTimes);
-                            return (
-                                <div
-                                    key={id}
-                                    className={`pill-card clickable ${late ? "late" : ""}`}
-                                    onClick={() => takePill(id, medicine, rawTimes)}
-                                    title={late ? `Late by ${lateMinutes(rawTimes)} min` : "Click to take"}
-                                    role="button"
-                                    tabIndex={0}
-                                >
-                                    <div className="pill-header">
-                                        <span className="medicine-name">{medicine}</span>
-                                        <span className={`status-icon ${status}`}>
-                                            {status === "taken" && "✔️"}
-                                            {status === "missed" && "❌"}
-                                            {status === "pending" && "⏳"}
-                                        </span>
-                                    </div>
-
-                                    <div className="pill-details">
-                                        <div className="person-name">{name}</div>
-                                        <div className="pill-time">{time}</div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        <button type="button" className="pill-card add-card" onClick={() => setIsAddModalOpen(true)}>
-                            <span className="plus-sign">＋</span>
-                            <div>Add Pill</div>
-                        </button>
-                    </div>
-                </section>
-
-                <section className="notifications-section">
-                    <h2>Notifications</h2>
-                    {notifications.map(({ id, message, date }) => (
-                        <div key={id} className="notification-item">
-                            <div>{message}</div>
-                            <small>{date}</small>
-                        </div>
-                    ))}
-                </section>
-            </main>
-
-            {/* Link Modal */}
-            {showLinkModal && (
-                <div className="modal-overlay" onClick={() => setShowLinkModal(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <h3>Add {linkType === 'caregiver' ? 'Caregiver' : 'Patient'}</h3>
-                        <p className="modal-hint">Enter their email to link</p>
-
-                        <div className="search-box">
-                            <input
-                                type="email"
-                                placeholder="Enter email..."
-                                value={linkEmail}
-                                onChange={(e) => setLinkEmail(e.target.value.toLowerCase())}
-                            />
-                            <button onClick={handleLink}>Link</button>
-                        </div>
-
-                        {error && <p className="error-message">{error}</p>}
-
-                        <button className="close-btn" onClick={() => setShowLinkModal(false)}>Close</button>
-                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={addTimeField}
+                  >
+                    + Add another time
+                  </button>
                 </div>
-            )}
+              </label>
+
+              <label className="modal-label">
+                Repeat
+                <div className="repeat-row">
+                  <span>Once every</span>
+                  <input
+                    className="modal-input repeat-days"
+                    name="intervalDays"
+                    value={pillForm.intervalDays}
+                    onChange={handleChange}
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                  />
+                  <span>day(s)</span>
+                </div>
+              </label>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="modal-btn secondary"
+                  onClick={closeAddModal}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="modal-btn primary">
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 }
 
 export default Dashboard;
