@@ -10,12 +10,11 @@ import './LoginPage.css';
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('patient');
+  const [username, setUsername] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,14 +26,14 @@ function LoginPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const token = await userCredential.user.getIdToken();
 
-        // Save user with role to backend
+        // Create user in backend
         await fetch('http://localhost:3000/api/users', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ role })
+          body: JSON.stringify({ username })
         });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -55,7 +54,6 @@ function LoginPage() {
           }
         });
       }
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,23 +94,17 @@ function LoginPage() {
 
           {isSignUp && (
             <div className="form-group">
-              <label>I am a:</label>
-              <div className="role-selection">
-                <button
-                  type="button"
-                  className={`role-button ${role === 'patient' ? 'active' : ''}`}
-                  onClick={() => setRole('patient')}
-                >
-                  Patient
-                </button>
-                <button
-                  type="button"
-                  className={`role-button ${role === 'caregiver' ? 'active' : ''}`}
-                  onClick={() => setRole('caregiver')}
-                >
-                  Caregiver
-                </button>
-              </div>
+              <label htmlFor="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                minLength={3}
+                maxLength={20}
+                placeholder="Choose a username"
+              />
             </div>
           )}
 

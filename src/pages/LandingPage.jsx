@@ -1,45 +1,55 @@
-// import './LandingPage.css';
+import './LandingPage.css';
 
 function LandingPage() {
   return (
-    <main className="bg-[#90D5FF]">
-      <section className="bg-[url('../assets/ChatGPT Image Jan 17, 2026, 03_54_04 PM.png')] bg-cover bg-center bg-no-repeat h-screen w-full flex justify-center items-center flex-col text-white text-center p-4 rounded-lg border-2 border-green-500">
-        <h1>Welcome to MedTime</h1>
-        <p>The best way to manage your prescriptions and medications</p>
-        <button>Get Started</button>
+    <main className="landing-page">
+      <section className="hero-section">
+        <h1 className="hero-title">Welcome to MedTime</h1>
+        <p className="hero-subtitle">The best way to manage your prescriptions and medications</p>
+        <button className="hero-btn">Get Started</button>
       </section>
-      <section>
-        <h2>Features</h2>
-        <ul>
-          <li>Manage your prescriptions and medications</li>
-          <li>Get reminders for your medications</li>
-          <li>View your prescription history</li>
+
+      <section className="landing-section">
+        <h2 className="section-title">Features</h2>
+        <div className="features-grid">
+          <div className="feature-card">
+            <h3 className="feature-title">Manage Prescriptions</h3>
+            <p className="feature-desc">Keep track of all your medications in one place</p>
+          </div>
+          <div className="feature-card">
+            <h3 className="feature-title">Get Reminders</h3>
+            <p className="feature-desc">Never miss a dose with timely notifications</p>
+          </div>
+          <div className="feature-card">
+            <h3 className="feature-title">View History</h3>
+            <p className="feature-desc">Access your complete prescription history anytime</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <h2 className="section-title">About Us</h2>
+        <p className="section-text">
+          We are a team of developers passionate about creating a better way to manage your prescriptions and medications. Our mission is to help you stay healthy and never miss a dose.
+        </p>
+      </section>
+
+      <section className="landing-section">
+        <h2 className="section-title">Testimonials</h2>
+        <p className="section-text">
+          "MedTime has completely changed how I manage my medications. I never miss a dose anymore!" - Happy User
+        </p>
+      </section>
+
+      <footer className="contact-section">
+        <h2 className="section-title">Contact Us</h2>
+        <p className="contact-email">Email: <a href="mailto:info@medtime.com">info@medtime.com</a></p>
+        <ul className="social-links">
+          <li><a href="#">Facebook</a></li>
+          <li><a href="#">Twitter</a></li>
+          <li><a href="#">Instagram</a></li>
         </ul>
-      </section>
-      <section>
-        <h2>About Us</h2>
-        <p>We are a team of developers who are passionate about creating a better way to manage your prescriptions and medications</p>
-      </section>
-      <section>
-        <h2>Contact Us</h2>
-        <p>Email: info@medtime.com</p>
-      </section>
-      <section>
-        <h2>Follow Us</h2>
-        <ul>
-          <li>Facebook</li>
-          <li>Twitter</li>
-          <li>Instagram</li>
-        </ul>
-      </section>
-      <section>
-        <h2>Pricing</h2>
-        <p>We offer a free plan and a paid plan. The free plan allows you to manage up to 10 prescriptions and medications. The paid plan allows you to manage unlimited prescriptions and medications.</p>
-      </section>
-      <section>
-        <h2>Testimonials</h2>
-        <p>What our users are saying about us</p>
-      </section>
+      </footer>
     </main>
   );
 }

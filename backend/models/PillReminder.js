@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const pillreminderSchema = new mongoose.Schema({
+const pillReminderSchema = new mongoose.Schema({
   uid: {
     type: String,
     required: true,
@@ -28,4 +28,4 @@ const pillreminderSchema = new mongoose.Schema({
   }
 });
 
-export default mongoose.model('User', userSchema);
+export default mongoose.model('PillReminder', pillReminderSchema);
