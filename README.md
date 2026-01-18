@@ -1,16 +1,55 @@
-# React + Vite
+# Hey, it's MedTime.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![MediTime Logo](https://github.com/kpasag/nwHacks2026/blob/main/public/images/Alarm%20Logo2.png "MediTime")
 
-Currently, two official plugins are available:
+# Table of Contents
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- [About](#about)
+ - [Features](#getting-started)
+- [Getting Started](#getting-started)
+ - [Caregivers](#caregivers)
+- [What We Used](#what-we-used)
+- [Development](#development)
+ - [Challenges](#challenges)
+ - [Future Plans](#future-plans)
 
-## React Compiler
+# About
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Managing multiple prescriptions shouldn't be difficult.
+MedTime is a web-based app that helps us stay on top of our own medication, as well as the health of our loved ones.
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Smart reminders and customizable dosages helps users keep track of what they've taken and what's coming up.
+- Caregiver roles allow for easy access to patient dashboards letting them know when doses are missed or late.
+- Stay accountable together by becoming linking with friends and family.
+- Keep track of your medication history and share records with your doctor.
+
+# Getting Started
+
+Create a free account today at [MedTime.Tech]().
+
+## Caregivers
+
+Link other users as patients or caregivers from the dashboard or your profile using email or username.
+
+# What We Used
+
+MedTime is built with:
+- React,
+- NodeJS,
+- Firebase auth, and
+- MongoDB
+
+# Development
+
+This was built in 23 hours for nwHacks 2026.
+
+## Challenges
+
+## Future Plans
+
+- Mobile, phone, and email notifications.
+- Snap a picture of your prescription to quickly add a reminder.
+- Keep track of when you need to refill and where to find them.
+
