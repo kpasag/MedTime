@@ -887,7 +887,7 @@ function Dashboard() {
                 <li key={patient._id} className="relationship-item">
                   <span>{patient.email}</span>
                   <button
-                    onClick={() => loadPatientPage(patient._id)}
+                    onClick={() => loadPatientPage(patient.email)}
                     className="profile-btn profile-btn-remove"
                   >
                     View

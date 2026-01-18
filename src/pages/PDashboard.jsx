@@ -307,8 +307,7 @@ function Dashboard() {
         if (!user) return;
 
         const token = await user.getIdToken();
-        const patientUID = sessionStorage.getItem("viewedPatientID");
-        console.log(patientUID)
+        const patientEmail = sessionStorage.getItem("viewedPatientID");
 
         const response = await fetch('http://localhost:3000/api/users/patient-reminders', {
           method: 'POST',
@@ -316,7 +315,7 @@ function Dashboard() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ uid: patientUID })
+          body: JSON.stringify({ email: patientEmail })
         });
 
         if (response.ok) {

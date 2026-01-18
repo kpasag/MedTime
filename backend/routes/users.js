@@ -83,7 +83,7 @@ router.post('/patient-reminders', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const patient = await User.findOne({ uid: req.body.uid })
+    const patient = await User.findOne({ email: req.body.email })
       .populate("pillReminders");
     console.log(req.body);
 
