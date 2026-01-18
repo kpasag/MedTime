@@ -20,6 +20,9 @@ function Header() {
         <Link to="/login" className="link">
           Login
         </Link>
+        <Link to="/profile" className="link">
+          Profile
+        </Link>
       </nav>
     </header >
   );
