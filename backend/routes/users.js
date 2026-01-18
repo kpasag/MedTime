@@ -48,6 +48,23 @@ router.get('/me', verifyToken, async (req, res) => {
   }
 });
 
+// Get all pill reminders for the current user
+router.get('/reminders', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ uid: req.user.uid })
+      .populate('pillReminders');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user.pillReminders || []);
+  } catch (error) {
+    console.error('Error fetching reminders:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Add reminder
 router.post('/add-reminder', verifyToken, async (req, res) => {
   try {
@@ -197,6 +214,77 @@ router.put('/update-reminder/:reminderId', verifyToken, async (req, res) => {
     res.json(reminder);
   } catch (error) {
     console.error('Error updating reminder:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Mark a specific dose as taken
+router.post('/mark-taken/:reminderId', verifyToken, async (req, res) => {
+  try {
+    const { reminderId } = req.params;
+    const { time, scheduledFor } = req.body; // time is like "09:00", scheduledFor is the date
+
+    const reminder = await PillReminder.findById(reminderId);
+    if (!reminder) {
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
+
+    // Initialize lastTaken array if it doesn't exist
+    if (!reminder.lastTaken) {
+      reminder.lastTaken = [];
+    }
+
+    // Find if this time already has a record for today
+    const existingIndex = reminder.lastTaken.findIndex(
+      lt => lt.time === time && 
+      new Date(lt.scheduledFor).toDateString() === new Date(scheduledFor).toDateString()
+    );
+
+    const takenRecord = {
+      time,
+      takenAt: new Date(),
+      scheduledFor: new Date(scheduledFor)
+    };
+
+    if (existingIndex >= 0) {
+      // Update existing record
+      reminder.lastTaken[existingIndex] = takenRecord;
+    } else {
+      // Add new record
+      reminder.lastTaken.push(takenRecord);
+    }
+
+    await reminder.save();
+    res.json(reminder);
+  } catch (error) {
+    console.error('Error marking pill as taken:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Unmark a dose (set back to pending)
+router.post('/unmark-taken/:reminderId', verifyToken, async (req, res) => {
+  try {
+    const { reminderId } = req.params;
+    const { time, scheduledFor } = req.body;
+
+    const reminder = await PillReminder.findById(reminderId);
+    if (!reminder) {
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
+
+    // Remove the taken record for this specific time/date
+    if (reminder.lastTaken) {
+      reminder.lastTaken = reminder.lastTaken.filter(
+        lt => !(lt.time === time && 
+        new Date(lt.scheduledFor).toDateString() === new Date(scheduledFor).toDateString())
+      );
+    }
+
+    await reminder.save();
+    res.json(reminder);
+  } catch (error) {
+    console.error('Error unmarking pill:', error);
     res.status(500).json({ error: error.message });
   }
 });
