@@ -1,16 +1,23 @@
+import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 import { Link } from "react-router-dom";
 
 function LandingPage() {
+  const navigate = useNavigate();
+
   return (
     <main className="landing-page">
       <section className="hero-section">
         <h1 className="hero-title">Welcome to MedTime</h1>
         <p className="hero-subtitle">The best way to manage your prescriptions and medications</p>
+<<<<<<< HEAD
 
         <Link to="/login">
           <button className="hero-btn">Get Started</button>
         </Link>
+=======
+        <button className="hero-btn" onClick={() => navigate('/login')}>Get Started</button>
+>>>>>>> aad96c72c6e65acebc2a10a940289c00068040f7
       </section>
 
       <section className="landing-section">

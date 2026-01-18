@@ -88,7 +88,7 @@ function Dashboard() {
     const q = brandQuery.trim();
     setSuggestionsError("");
 
-    // Show dropdown while typing, but do not fetch at 1 character (too slow / too broad)
+    // Show dropdown while typing, require 3+ characters before fetching
     if (q.length === 0) {
       setBrandGroups([]);
       setIsBrandDropdownOpen(false);
@@ -98,8 +98,8 @@ function Dashboard() {
       return;
     }
 
-    if (q.length === 1) {
-      setBrandGroups([{ label: "Keep typing...", count: 0 }]);
+    if (q.length < 3) {
+      setBrandGroups([{ label: "Type at least 3 characters...", count: 0 }]);
       setIsBrandDropdownOpen(true);
       setSelectedBrand("");
       setProductOptions([]);
