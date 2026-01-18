@@ -29,9 +29,7 @@ function Header() {
   return (
     <header className="header">
       <Link to="/" className="link">
-        <h1 className="title">
-          MedTime
-        </h1>
+        <img src="./public/images/alarm_logo.png" alt="MedTime Logo" className="logo" />
       </Link>
 
       <nav className="nav">

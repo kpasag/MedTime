@@ -41,3 +41,8 @@
   transform: translateY(-2px);
   text-decoration: underline;
 }
+
+.logo {
+  height: auto;
+  width: 10vw;
+}
