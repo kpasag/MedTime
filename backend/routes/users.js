@@ -55,6 +55,7 @@ router.put('/add-reminder', verifyToken, async (req, res) => {
       { uid: req.user.uid },
       { $push: { pillReminders: reminder } }
     )
+    user.save()
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });

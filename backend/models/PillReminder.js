@@ -10,6 +10,10 @@ const pillReminderSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  dosage: {
+    type: Number,
+    require: true
+  },
   timesPerDay: [{
     type: String,
     required: true

@@ -1,10 +1,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import admin from 'firebase-admin';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import { verifyToken } from './middleware/authMiddleware.js';
 import userRoutes from './routes/users.js';
-
 dotenv.config();
 
 admin.initializeApp({
@@ -16,6 +16,7 @@ admin.initializeApp({
 });
 
 const app = express();
+app.use(cors({ origin: 'http://localhost:5000', credentials: false }));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
