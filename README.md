@@ -11,7 +11,6 @@ Each user can track their own medications, receive smart reminders, and optional
 
 
 ## 2. Getting Started
-- Create a free account at **[MedTime](https://medtime-s84o.onrender.com/)**.
 - Add your medications, dosage details, and schedule.
 - Optionally link caregivers or family members to help monitor your health.
 - Your dashboard will show upcoming doses, history, and alerts.
