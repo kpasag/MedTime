@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState  } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./Dashboard.css";
 
 function Dashboard() {
-    const navigate = useNavigate();
-    const user = auth.currentUser;
-
   const [currentPills, setCurrentPills] = useState([
     {
       id: 1,
@@ -29,33 +26,6 @@ function Dashboard() {
   ];
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-    // Link modal state
-    const [showLinkModal, setShowLinkModal] = useState(false);
-    const [linkType, setLinkType] = useState('caregiver');
-    const [linkEmail, setLinkEmail] = useState('');
-    const [error, setError] = useState('');
-    const [userData, setUserData] = useState(null);
-
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-            navigate('/');
-        } catch (err) {
-            console.error('Logout error:', err);
-        }
-    };
-
-    const handleLink = async () => {
-        if (!linkEmail) {
-            setError('Please enter an email');
-            return;
-        }
-
-        setError('');
-        setShowLinkModal(false);
-        setLinkEmail('');
-    };
 
   const [pillForm, setPillForm] = useState({
     pillName: "",
@@ -82,8 +52,6 @@ function Dashboard() {
   const cacheRef = useRef(new Map()); // key: query -> raw normalized list
 
   const totalPills = currentPills.length;
-
-  const openAddModal = () => setIsAddModalOpen(true);
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
@@ -393,7 +361,7 @@ function Dashboard() {
             <button
               type="button"
               className="pill-card add-card"
-              onClick={openAddModal}
+              onClick={() => setIsAddModalOpen(true)}
             >
               <span className="plus-sign">+</span>
               <div>Add Pill</div>
