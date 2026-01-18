@@ -48,14 +48,14 @@
 }
 
 .sitemap-link {
-  color: #388E3C;
+  color: #545454;
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.3s ease;
 }
 
 .sitemap-link:hover {
-  color: #2E7D32;
+  color: #545454;
   text-decoration: underline;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .social-link {
-  color: #388E3C;
+  color: rgb(54, 54, 54);
   transition: color 0.3s ease, transform 0.2s ease;
   display: inline-flex;
   align-items: center;
@@ -73,7 +73,7 @@
 }
 
 .social-link:hover {
-  color: #2E7D32;
+  color: #545454;
   transform: scale(1.1);
 }
 

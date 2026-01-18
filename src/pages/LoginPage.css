@@ -4,13 +4,17 @@
   align-items: center;
   min-height: 80vh;
   padding: 20px;
+
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 70%),
+    linear-gradient(135deg, #2c3e50, #34495e);
 }
 
 .login-container {
   background: #fff;
   padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: 400px;
 }
@@ -18,7 +22,8 @@
 .login-container h2 {
   margin: 0 0 24px;
   text-align: center;
-  color: #333;
+  color: #2c3e50;
+  font-weight: 700;
 }
 
 .form-group {
@@ -35,31 +40,33 @@
 .form-group input {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #000000;
+  border-radius: 6px;
   font-size: 16px;
   box-sizing: border-box;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #3498db;
 }
 
 .login-container button[type="submit"] {
   width: 100%;
   padding: 12px;
-  background: #007bff;
+  background: #3498db;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 16px;
   cursor: pointer;
   margin-top: 8px;
+  transition: background 0.25s ease, transform 0.2s ease;
 }
 
 .login-container button[type="submit"]:hover {
-  background: #0056b3;
+  background: #2980b9;
+  transform: translateY(-2px);
 }
 
 .login-container button[type="submit"]:disabled {
@@ -79,13 +86,13 @@
 .toggle-text {
   text-align: center;
   margin-top: 20px;
-  color: #666;
+  color: #9a9a9a;
 }
 
 .toggle-button {
   background: none;
   border: none;
-  color: #007bff;
+  color: #3498db;
   cursor: pointer;
   font-size: inherit;
   padding: 0;
@@ -105,19 +112,19 @@
   padding: 12px;
   border: 2px solid #ddd;
   background: #fff;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .role-button:hover {
-  border-color: #007bff;
+  border-color: #3498db;
 }
 
 .role-button.active {
-  border-color: #007bff;
+  border-color: #3498db;
   background: #e7f1ff;
-  color: #007bff;
+  color: #3498db;
   font-weight: 500;
 }
