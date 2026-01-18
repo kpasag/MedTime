@@ -10,6 +10,8 @@ function Dashboard() {
     ];
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const [editingPillId, setEditingPillId] = useState(null);
 
     // Link caregiver/patient modal state
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -39,6 +41,7 @@ function Dashboard() {
 
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
     const [suggestionsError, setSuggestionsError] = useState("");
+    const [formError, setFormError] = useState('');
 
     const abortRef = useRef(null);
     const cacheRef = useRef(new Map()); // key: query -> raw normalized list
@@ -47,6 +50,7 @@ function Dashboard() {
 
     const closeAddModal = () => {
         setIsAddModalOpen(false);
+        setEditingPillId(null);
         setPillForm({ pillName: "", dosage: "", takeTimes: [""], intervalDays: 1 });
 
         setBrandQuery("");
@@ -58,6 +62,7 @@ function Dashboard() {
         setSelectedProductId("");
         setSuggestionsError("");
         setIsLoadingSuggestions(false);
+        setFormError('');
 
         if (abortRef.current) {
             abortRef.current.abort();
@@ -81,6 +86,17 @@ function Dashboard() {
         setLinkError('');
         setLinkSuccess('');
     };
+
+    // Close dropdown menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (openMenuId && !e.target.closest('.pill-menu-wrapper')) {
+                setOpenMenuId(null);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [openMenuId]);
 
     const handleLinkUser = async (e) => {
         e.preventDefault();
@@ -289,7 +305,8 @@ function Dashboard() {
 
         setProductOptions(deduped);
         setSelectedProductId("");
-        setPillForm((prev) => ({ ...prev, pillName: "" }));
+        // Set pillName to the selected brand so form validation passes
+        setPillForm((prev) => ({ ...prev, pillName: groupLabel }));
     };
 
     const chooseProduct = (productId) => {
@@ -345,27 +362,48 @@ function Dashboard() {
         return `every ${days} days`;
     };
 
-    const updateDatabasePills = async (pillReminder) => {
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) {
-            console.error('No auth token available');
-            return;
-        }
+    // Load pills from backend on mount
+    useEffect(() => {
+        const loadPills = async () => {
+            try {
+                const token = await auth.currentUser?.getIdToken();
+                if (!token) return;
 
-        await fetch('http://localhost:3000/api/users', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(pillReminder)
+                const res = await fetch('http://localhost:3000/api/users/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) return;
+
+                const user = await res.json();
+                if (user.pillReminders && user.pillReminders.length > 0) {
+                    const pills = user.pillReminders.map((reminder) => ({
+                        id: reminder._id,
+                        name: "You",
+                        medicine: `${reminder.name} (${reminder.dosage})`,
+                        time: `${reminder.timesPerDay.join(", ")} (${reminder.frequencyInDays === 1 ? 'daily' : `every ${reminder.frequencyInDays} days`})`,
+                        status: "pending",
+                    }));
+                    setCurrentPills(pills);
+                }
+            } catch (err) {
+                console.error('Error loading pills:', err);
+            }
+        };
+
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) loadPills();
         });
-    };
 
-    const handleSubmit = (e) => {
+        return () => unsubscribe();
+    }, []);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setFormError('');
 
-        const pillName = pillForm.pillName.trim();
+        // Use brandQuery as pillName if no brand was selected from dropdown
+        const pillName = pillForm.pillName.trim() || brandQuery.trim();
         const dosage = pillForm.dosage.trim();
         const intervalDays = pillForm.intervalDays;
 
@@ -373,28 +411,159 @@ function Dashboard() {
             .map((t) => t.trim())
             .filter(Boolean);
 
-        if (
-            !pillName ||
-            !dosage ||
-            !intervalDays ||
-            intervalDays < 1 ||
-            cleanedTimes.length === 0
-        )
+        if (!pillName) {
+            setFormError('Please enter a medicine name');
             return;
+        }
+        if (!dosage) {
+            setFormError('Please enter a dosage');
+            return;
+        }
+        if (!intervalDays || intervalDays < 1) {
+            setFormError('Please enter a valid repeat interval');
+            return;
+        }
+        if (cleanedTimes.length === 0) {
+            setFormError('Please enter at least one time');
+            return;
+        }
 
-        const timesLabel = cleanedTimes.map(formatTime).join(", ");
-        const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) {
+                console.error('Not authenticated');
+                return;
+            }
 
-        const newPill = {
-            id: Date.now(),
-            name: "New Person",
-            medicine: `${pillName} (${dosage})`,
-            time: timeLabel,
-            status: "pending",
-        };
+            if (editingPillId) {
+                // Update existing pill
+                const res = await fetch(`http://localhost:3000/api/users/update-reminder/${editingPillId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: pillName,
+                        dosage: dosage,
+                        timesPerDay: cleanedTimes,
+                        frequencyInDays: intervalDays
+                    })
+                });
 
-        setCurrentPills((prev) => [...prev, newPill]);
-        closeAddModal();
+                if (!res.ok) {
+                    const data = await res.json();
+                    console.error('Failed to update pill:', data.error);
+                    return;
+                }
+
+                const updatedReminder = await res.json();
+                const timesLabel = cleanedTimes.map(formatTime).join(", ");
+                const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
+
+                setCurrentPills((prev) => prev.map(pill => 
+                    pill.id === editingPillId
+                        ? {
+                            ...pill,
+                            medicine: `${pillName} (${dosage})`,
+                            time: timeLabel
+                          }
+                        : pill
+                ));
+            } else {
+                // Add new pill
+                const res = await fetch('http://localhost:3000/api/users/add-reminder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: pillName,
+                        dosage: dosage,
+                        timesPerDay: cleanedTimes,
+                        frequencyInDays: intervalDays
+                    })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    console.error('Failed to save pill:', data.error);
+                    return;
+                }
+
+                const savedReminder = await res.json();
+                const timesLabel = cleanedTimes.map(formatTime).join(", ");
+                const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
+
+                const newPill = {
+                    id: savedReminder._id,
+                    name: "You",
+                    medicine: `${pillName} (${dosage})`,
+                    time: timeLabel,
+                    status: "pending",
+                };
+
+                setCurrentPills((prev) => [...prev, newPill]);
+            }
+            closeAddModal();
+        } catch (err) {
+            console.error('Error saving pill:', err);
+        }
+    };
+
+    const handleDeletePill = async (pillId) => {
+        if (!window.confirm('Are you sure you want to delete this medication?')) {
+            return;
+        }
+
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(`http://localhost:3000/api/users/delete-reminder/${pillId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                // Remove from local state
+                setCurrentPills(prev => prev.filter(pill => pill.id !== pillId));
+            } else {
+                console.error('Failed to delete pill');
+                alert('Failed to delete medication. Please try again.');
+            }
+        } catch (err) {
+            console.error('Error deleting pill:', err);
+            alert('Error deleting medication. Please try again.');
+        }
+    };
+
+    const handleEditPill = async (pillId) => {
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(`http://localhost:3000/api/users/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const user = await response.json();
+            const reminder = user.pillReminders?.find(r => r._id === pillId);
+            
+            if (reminder) {
+                setEditingPillId(pillId);
+                setPillForm({
+                    pillName: reminder.name,
+                    dosage: reminder.dosage,
+                    takeTimes: reminder.timesPerDay || [''],
+                    intervalDays: reminder.frequencyInDays
+                });
+                setBrandQuery(reminder.name);
+                setIsAddModalOpen(true);
+            }
+        } catch (err) {
+            console.error('Error loading pill for edit:', err);
+        }
     };
 
     return (
@@ -430,12 +599,45 @@ function Dashboard() {
                         {currentPills.map(({ id, name, medicine, time, status }) => (
                             <div key={id} className="pill-card">
                                 <div className="pill-header">
-                                    <span className="medicine-name">{medicine}</span>
-                                    <span className={`status-icon ${status}`}>
-                                        {status === "taken" && "✓"}
-                                        {status === "missed" && "x"}
-                                        {status === "pending" && "..."}
-                                    </span>
+                                    <div className="pill-header-left">
+                                        <span className={`status-badge ${status}`}>
+                                            {status === "taken" && "Taken"}
+                                            {status === "missed" && "Missed"}
+                                            {status === "pending" && "Pending"}
+                                        </span>
+                                        <span className="medicine-name">{medicine}</span>
+                                    </div>
+                                    <div className="pill-menu-wrapper">
+                                        <button
+                                            className="pill-menu-btn"
+                                            onClick={() => setOpenMenuId(openMenuId === id ? null : id)}
+                                            title="Options"
+                                        >
+                                            ⋮
+                                        </button>
+                                        {openMenuId === id && (
+                                            <div className="pill-dropdown-menu">
+                                                <button
+                                                    className="dropdown-item"
+                                                    onClick={() => {
+                                                        setOpenMenuId(null);
+                                                        handleEditPill(id);
+                                                    }}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    className="dropdown-item delete"
+                                                    onClick={() => {
+                                                        setOpenMenuId(null);
+                                                        handleDeletePill(id);
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="pill-details">
@@ -622,21 +824,54 @@ function Dashboard() {
 
                             <label className="modal-label">
                                 Repeat
-                                <div className="repeat-row">
-                                    <span>Once every</span>
-                                    <input
-                                        className="modal-input repeat-days"
-                                        name="intervalDays"
-                                        value={pillForm.intervalDays}
-                                        onChange={handleChange}
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        required
-                                    />
-                                    <span>day(s)</span>
+                                <div className="repeat-options">
+                                    <button
+                                        type="button"
+                                        className={`repeat-btn ${pillForm.intervalDays === 1 ? 'active' : ''}`}
+                                        onClick={() => setPillForm(prev => ({ ...prev, intervalDays: 1 }))}
+                                    >
+                                        Daily
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`repeat-btn ${pillForm.intervalDays === 2 ? 'active' : ''}`}
+                                        onClick={() => setPillForm(prev => ({ ...prev, intervalDays: 2 }))}
+                                    >
+                                        Every 2 days
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`repeat-btn ${pillForm.intervalDays === 3 ? 'active' : ''}`}
+                                        onClick={() => setPillForm(prev => ({ ...prev, intervalDays: 3 }))}
+                                    >
+                                        Every 3 days
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`repeat-btn ${pillForm.intervalDays === 7 ? 'active' : ''}`}
+                                        onClick={() => setPillForm(prev => ({ ...prev, intervalDays: 7 }))}
+                                    >
+                                        Weekly
+                                    </button>
+                                    <div className="repeat-custom">
+                                        <span>Custom:</span>
+                                        <select
+                                            className="modal-input repeat-days-select"
+                                            name="intervalDays"
+                                            value={pillForm.intervalDays}
+                                            onChange={(e) => setPillForm(prev => ({ ...prev, intervalDays: Number(e.target.value) }))}
+                                        >
+                                            {Array.from({ length: 30 }, (_, i) => i + 1).map(day => (
+                                                <option key={day} value={day}>
+                                                    {day} {day === 1 ? 'day' : 'days'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </label>
+
+                            {formError && <p className="error-message">{formError}</p>}
 
                             <div className="modal-actions">
                                 <button
