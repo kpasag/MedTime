@@ -261,6 +261,124 @@ function Dashboard() {
         setShowSuggestions(true);
     }, [medicineInput, commonDrugs]);
 
+    // Load pill reminders from backend
+    useEffect(() => {
+        const loadReminders = async () => {
+            try {
+                const user = auth.currentUser;
+                if (!user) return;
+
+                const token = await user.getIdToken();
+                const response = await fetch('http://localhost:3000/api/users/reminders', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const reminders = await response.json();
+                    const pills = reminders.flatMap(reminder => 
+                        reminder.timesPerDay.map(time => ({
+                            id: `${reminder._id}-${time}`,
+                            reminderId: reminder._id,
+                            name: "You",
+                            medicine: `${reminder.name} (${reminder.dosage})`,
+                            time,
+                            intervalDays: reminder.frequencyInDays,
+                            lastTaken: reminder.lastTaken || [],
+                            scheduledFor: new Date(),
+                            status: calculateStatus(time, reminder.lastTaken, reminder.frequencyInDays)
+                        }))
+                    );
+                    setCurrentPills(pills);
+                }
+            } catch (error) {
+                console.error('Error loading reminders:', error);
+            }
+        };
+
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                loadReminders();
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // Auto-refresh pill statuses every minute
+    useEffect(() => {
+        const refreshStatuses = () => {
+            setCurrentPills(prev => prev.map(pill => ({
+                ...pill,
+                status: calculateStatus(pill.time, pill.lastTaken, pill.intervalDays)
+            })));
+        };
+
+        // Refresh every minute
+        const interval = setInterval(refreshStatuses, 60000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // Calculate status based on time and last taken
+    const calculateStatus = (time, lastTakenArray = [], frequencyInDays) => {
+        const now = new Date();
+        
+        // Parse time - handle both "HH:MM" and "H:MM AM/PM (frequency)" formats
+        let hours, minutes;
+        if (time.includes('AM') || time.includes('PM')) {
+            // Old format like "1:59 AM (daily)"
+            const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/);
+            if (!timeMatch) return 'upcoming';
+            
+            hours = parseInt(timeMatch[1]);
+            minutes = parseInt(timeMatch[2]);
+            const period = timeMatch[3];
+            
+            if (period === 'PM' && hours !== 12) hours += 12;
+            if (period === 'AM' && hours === 12) hours = 0;
+        } else {
+            // New format like "01:59"
+            const parts = time.split(':').map(Number);
+            if (parts.length !== 2) return 'upcoming';
+            [hours, minutes] = parts;
+        }
+        
+        // Create today's scheduled time
+        const scheduledToday = new Date();
+        scheduledToday.setHours(hours, minutes, 0, 0);
+
+        // Extract raw time for comparison
+        const rawTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+        // Check if this dose was taken today
+        const takenToday = lastTakenArray.find(lt => {
+            const ltDate = new Date(lt.scheduledFor);
+            return lt.time === rawTime && 
+                   ltDate.toDateString() === now.toDateString();
+        });
+
+        if (takenToday) {
+            return 'taken';
+        }
+
+        // Grace period: 1 hour after scheduled time
+        const missedTime = new Date(scheduledToday);
+        missedTime.setHours(missedTime.getHours() + 1);
+
+        if (now > missedTime) {
+            return 'missed';
+        }
+
+        if (now >= scheduledToday) {
+            return 'pending';
+        }
+
+        // Not yet time
+        return 'upcoming';
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setPillForm((prev) => ({
@@ -352,18 +470,24 @@ function Dashboard() {
                     return;
                 }
 
-                const timesLabel = cleanedTimes.map(formatTime).join(", ");
-                const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
-
-                setCurrentPills((prev) => prev.map(pill => 
-                    pill.id === editingPillId
-                        ? {
-                            ...pill,
-                            medicine: `${pillName} (${dosage})`,
-                            time: timeLabel
-                          }
-                        : pill
-                ));
+                const updatedReminder = await res.json();
+                
+                // Remove old pills with this reminderId and add new ones
+                setCurrentPills((prev) => {
+                    const filtered = prev.filter(p => p.reminderId !== editingPillId);
+                    const newPills = updatedReminder.timesPerDay.map(time => ({
+                        id: `${updatedReminder._id}-${time}`,
+                        reminderId: updatedReminder._id,
+                        name: "You",
+                        medicine: `${updatedReminder.name} (${updatedReminder.dosage})`,
+                        time: time,
+                        intervalDays: updatedReminder.frequencyInDays,
+                        lastTaken: updatedReminder.lastTaken || [],
+                        scheduledFor: new Date(),
+                        status: calculateStatus(time, updatedReminder.lastTaken || [], updatedReminder.frequencyInDays)
+                    }));
+                    return [...filtered, ...newPills];
+                });
             } else {
                 // Add new pill
                 const res = await fetch('http://localhost:3000/api/users/add-reminder', {
@@ -387,18 +511,21 @@ function Dashboard() {
                 }
 
                 const savedReminder = await res.json();
-                const timesLabel = cleanedTimes.map(formatTime).join(", ");
-                const timeLabel = `${timesLabel} (${frequencyText(intervalDays)})`;
 
-                const newPill = {
-                    id: savedReminder._id,
+                // Create a pill for each scheduled time
+                const newPills = savedReminder.timesPerDay.map(time => ({
+                    id: `${savedReminder._id}-${time}`,
+                    reminderId: savedReminder._id,
                     name: "You",
-                    medicine: `${pillName} (${dosage})`,
-                    time: timeLabel,
-                    status: "pending",
-                };
+                    medicine: `${savedReminder.name} (${savedReminder.dosage})`,
+                    time: time,
+                    intervalDays: savedReminder.frequencyInDays,
+                    lastTaken: savedReminder.lastTaken || [],
+                    scheduledFor: new Date(),
+                    status: calculateStatus(time, savedReminder.lastTaken || [], savedReminder.frequencyInDays)
+                }));
 
-                setCurrentPills((prev) => [...prev, newPill]);
+                setCurrentPills((prev) => [...prev, ...newPills]);
             }
             closeAddModal();
         } catch (err) {
@@ -406,10 +533,70 @@ function Dashboard() {
         }
     };
 
-    const handleMarkAsTaken = (pillId) => {
-        setCurrentPills(prev => prev.map(pill => 
-            pill.id === pillId ? { ...pill, status: 'taken' } : pill
-        ));
+    const handleMarkAsTaken = async (pillId) => {
+        try {
+            const pill = currentPills.find(p => p.id === pillId);
+            console.log('Found pill:', pill);
+            if (!pill) {
+                console.error('Pill not found');
+                return;
+            }
+
+            // Support both old and new structure
+            const reminderId = pill.reminderId || pill.id;
+            // Extract raw time if it's formatted (e.g., "1:59 AM (daily)" -> "01:59")
+            let rawTime = pill.time;
+            if (pill.time.includes('AM') || pill.time.includes('PM')) {
+                // Old format, parse it
+                const timeMatch = pill.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/);
+                if (timeMatch) {
+                    let hours = parseInt(timeMatch[1]);
+                    const minutes = timeMatch[2];
+                    const period = timeMatch[3];
+                    
+                    if (period === 'PM' && hours !== 12) hours += 12;
+                    if (period === 'AM' && hours === 12) hours = 0;
+                    
+                    rawTime = `${hours.toString().padStart(2, '0')}:${minutes}`;
+                }
+            }
+
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) return;
+
+            const currentStatus = pill.status;
+            const endpoint = currentStatus === 'taken' 
+                ? 'unmark-taken' 
+                : 'mark-taken';
+
+            const response = await fetch(`http://localhost:3000/api/users/${endpoint}/${reminderId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    time: rawTime,
+                    scheduledFor: pill.scheduledFor || new Date()
+                })
+            });
+
+            if (response.ok) {
+                const updatedReminder = await response.json();
+                // Update the pill status locally
+                setCurrentPills(prev => prev.map(p => 
+                    p.id === pillId 
+                        ? { 
+                            ...p, 
+                            status: currentStatus === 'taken' ? 'pending' : 'taken',
+                            lastTaken: updatedReminder.lastTaken 
+                          } 
+                        : p
+                ));
+            }
+        } catch (error) {
+            console.error('Error marking pill:', error);
+        }
     };
 
     const handleDeletePill = async (pillId) => {
@@ -418,8 +605,14 @@ function Dashboard() {
         }
 
         try {
+            const pill = currentPills.find(p => p.id === pillId);
+            if (!pill) return;
+            
+            // Support both old and new structure
+            const reminderId = pill.reminderId || pill.id.split('-')[0];
+            
             const token = await auth.currentUser?.getIdToken();
-            const response = await fetch(`http://localhost:3000/api/users/delete-reminder/${pillId}`, {
+            const response = await fetch(`http://localhost:3000/api/users/delete-reminder/${reminderId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -427,7 +620,11 @@ function Dashboard() {
             });
 
             if (response.ok) {
-                setCurrentPills(prev => prev.filter(pill => pill.id !== pillId));
+                // Remove all pills with this reminderId
+                setCurrentPills(prev => prev.filter(p => {
+                    const pReminderId = p.reminderId || p.id.split('-')[0];
+                    return pReminderId !== reminderId;
+                }));
             } else {
                 console.error('Failed to delete pill');
                 alert('Failed to delete medication. Please try again.');
@@ -440,6 +637,12 @@ function Dashboard() {
 
     const handleEditPill = async (pillId) => {
         try {
+            const pill = currentPills.find(p => p.id === pillId);
+            if (!pill) return;
+            
+            // Support both old and new structure
+            const reminderId = pill.reminderId || pill.id.split('-')[0];
+            
             const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`http://localhost:3000/api/users/me`, {
                 headers: {
@@ -447,10 +650,10 @@ function Dashboard() {
                 }
             });
             const user = await response.json();
-            const reminder = user.pillReminders?.find(r => r._id === pillId);
+            const reminder = user.pillReminders?.find(r => r._id === reminderId);
             
             if (reminder) {
-                setEditingPillId(pillId);
+                setEditingPillId(reminderId);
                 setPillForm({
                     pillName: reminder.name,
                     dosage: reminder.dosage,
@@ -498,11 +701,9 @@ function Dashboard() {
                         {currentPills.map(({ id, name, medicine, time, status }) => (
                             <div 
                                 key={id} 
-                                className={`pill-card ${status === 'pending' ? 'clickable' : ''}`}
+                                className={`pill-card ${status} clickable`}
                                 onClick={() => {
-                                    if (status === 'pending') {
-                                        handleMarkAsTaken(id);
-                                    }
+                                    handleMarkAsTaken(id);
                                 }}
                             >
                                 <div className="pill-header">
@@ -511,6 +712,7 @@ function Dashboard() {
                                             {status === "taken" && "Taken"}
                                             {status === "missed" && "Missed"}
                                             {status === "pending" && "Pending"}
+                                            {status === "upcoming" && "Upcoming"}
                                         </span>
                                         <span className="medicine-name">{medicine}</span>
                                     </div>
@@ -527,7 +729,7 @@ function Dashboard() {
                                         </button>
                                         {openMenuId === id && (
                                             <div className="pill-dropdown-menu">
-                                                {status === 'pending' && (
+                                                {(status === 'pending' || status === 'upcoming' || status === 'missed') && (
                                                     <button
                                                         className="dropdown-item"
                                                         onClick={(e) => {
@@ -537,6 +739,18 @@ function Dashboard() {
                                                         }}
                                                     >
                                                         Mark as Taken
+                                                    </button>
+                                                )}
+                                                {status === 'taken' && (
+                                                    <button
+                                                        className="dropdown-item"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(null);
+                                                            handleMarkAsTaken(id);
+                                                        }}
+                                                    >
+                                                        Mark as Pending
                                                     </button>
                                                 )}
                                                 <button
