@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../../firebase.config';
 import {
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
   createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom'; // <-- for navigation
@@ -10,9 +12,11 @@ import './LoginPage.css';
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('patient');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const navigate = useNavigate(); // navigation hook
 
@@ -23,7 +27,18 @@ function LoginPage() {
 
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const token = await userCredential.user.getIdToken();
+
+        // Save user with role to backend
+        await fetch('http://localhost:3000/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ role })
+        });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -81,6 +96,28 @@ function LoginPage() {
               minLength={6}
             />
           </div>
+
+          {isSignUp && (
+            <div className="form-group">
+              <label>I am a:</label>
+              <div className="role-selection">
+                <button
+                  type="button"
+                  className={`role-button ${role === 'patient' ? 'active' : ''}`}
+                  onClick={() => setRole('patient')}
+                >
+                  Patient
+                </button>
+                <button
+                  type="button"
+                  className={`role-button ${role === 'caregiver' ? 'active' : ''}`}
+                  onClick={() => setRole('caregiver')}
+                >
+                  Caregiver
+                </button>
+              </div>
+            </div>
+          )}
 
           <button type="submit" disabled={loading}>
             {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Login'}

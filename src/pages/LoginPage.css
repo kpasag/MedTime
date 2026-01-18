@@ -94,3 +94,30 @@
 .toggle-button:hover {
   text-decoration: underline;
 }
+
+.role-selection {
+  display: flex;
+  gap: 12px;
+}
+
+.role-button {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #ddd;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.role-button:hover {
+  border-color: #007bff;
+}
+
+.role-button.active {
+  border-color: #007bff;
+  background: #e7f1ff;
+  color: #007bff;
+  font-weight: 500;
+}
